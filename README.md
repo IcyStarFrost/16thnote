@@ -7,6 +7,7 @@ This addon aims to be a better alternative.
 
 * Massively improves user experience when it comes to creating music addons
 * Internal code is neater (imo) when compared to Nombat
+* You are not forced to have both ambient and combat tracks in an addon. You can have only either ambient or combat if you desire. (If you deem this an improvement) 
 
 That's pretty much it.
 
