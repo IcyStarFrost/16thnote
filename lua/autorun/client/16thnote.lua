@@ -259,5 +259,33 @@ hook.Add( "PopulateToolMenu", "16thnote_spawnmenuoption", function()
             file.Write( "16thnote/disabledpacks.json", util.TableToJSON( data ) )
         end
 
+        -- Track Skipping --
+        local changeambient = vgui.Create( "DButton", panel )
+        panel:AddItem( changeambient )
+        changeambient:SetText( "Skip Ambient Track" )
+        function changeambient:DoClick()
+            local ambienttrack = SXNOTE:GetRandomTracks()
+    
+            if ambienttrack then
+                SXNOTE:PlayTrack( ambienttrack, "Ambient" )
+            else
+                SXNOTE.AmbientTimeDelay = CurTime() + 30
+            end
+        end
+
+        local changecombat = vgui.Create( "DButton", panel )
+        panel:AddItem( changecombat )
+        changecombat:SetText( "Skip Combat Track" )
+        function changecombat:DoClick()
+            local _, combattrack = SXNOTE:GetRandomTracks()
+
+            if combattrack then
+                SXNOTE:PlayTrack( combattrack, "Combat" )
+            else
+                SXNOTE.CombatTimeDelay = CurTime() + 30
+            end
+        end
+        -----------------------
+
 	end )
 end )
