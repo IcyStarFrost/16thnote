@@ -22,6 +22,8 @@ function SXNOTE:PlayTrack( file, type )
 
         hook.Add( "Think", "16thnote_fadeout" .. incre, function()
             if !IsValid( fadeoutsnd ) or fadeoutsnd:GetVolume() <= 0 then
+                fadeoutsnd:Stop()
+                fadeoutsnd = nil
                 hook.Remove( "Think", "16thnote_fadeout" .. incre )
                 return
             end
