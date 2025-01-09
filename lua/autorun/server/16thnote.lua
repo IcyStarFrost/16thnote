@@ -36,5 +36,5 @@ hook.Add( "Tick", "16thnote_combatdetermine", function()
         end
     end
 
-    cooldown = CurTime() + 0.5
+    cooldown = CurTime() + 0.5 -- No need to run this hook every tick.
 end )

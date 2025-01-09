@@ -10,6 +10,8 @@ file.CreateDir( "16thnote" )
 -- LOS only option
 CreateClientConVar( "16thnote_los", 0, true, true, "If combat music should only play if the enemy has line of sight to the player", 0, 1 )
 
+
+-- Debug messages
 function SXNOTE:Msg( ... )
     if !debugmode:GetBool() then return end
     print( "SXNOTE DEBUG: ", ... )
@@ -108,6 +110,9 @@ function SXNOTE:GetDisabled()
     return self.DisabledPacks
 end
 
+
+-- Returns a random track for the given type
+-- Type: Ambient or Combat
 function SXNOTE:GetRandomTrack( type )
     local _, addontracks = file.Find( "sound/16thnote/*", "GAME" )
 
@@ -173,7 +178,7 @@ hook.Add( "Think", "16thnote_musicthink", function()
         if combattrack then
             SXNOTE:Msg( "Starting new Combat Track", combattrack )
             SXNOTE:PlayTrack( combattrack, "Combat" )
-            SXNOTE.CombatTimeDelay = CurTime() + 3
+            SXNOTE.CombatTimeDelay = CurTime() + 3 -- Prevent track spamming which can severely degrade FPS
         else
             SXNOTE:Msg( "Failed to load sound: Combat", combattrack )
             SXNOTE.CombatTimeDelay = CurTime() + 30
@@ -186,7 +191,7 @@ hook.Add( "Think", "16thnote_musicthink", function()
         if ambienttrack then
             SXNOTE:Msg( "Starting new Ambient Track", ambienttrack )
             SXNOTE:PlayTrack( ambienttrack, "Ambient" )
-            SXNOTE.AmbientTimeDelay = CurTime() + 3
+            SXNOTE.AmbientTimeDelay = CurTime() + 3 -- Prevent track spamming which can severely degrade FPS
         else
             SXNOTE:Msg( "Failed to load sound: Ambient", ambienttrack )
             SXNOTE.AmbientTimeDelay = CurTime() + 30
@@ -238,6 +243,8 @@ hook.Add( "PopulateToolMenu", "16thnote_spawnmenuoption", function()
         panel:CheckBox( "LOS Only", "16thnote_los" )
         panel:ControlHelp( "Whether combat music should only play if the enemy has line of sight to you" ):SetColor( Color( 255, 102, 0 ) )
 
+
+        -- Enable/Disable Code --
         panel:Help( "--- Enable/Disable Music Packs ---" )
 
         local disabledlist
@@ -308,6 +315,7 @@ hook.Add( "PopulateToolMenu", "16thnote_spawnmenuoption", function()
 
             file.Write( "16thnote/disabledpacks.json", util.TableToJSON( data ) )
         end
+        -------------------------------------------------------------------
 
         -- Track Skipping --
         local changeambient = vgui.Create( "DButton", panel )
