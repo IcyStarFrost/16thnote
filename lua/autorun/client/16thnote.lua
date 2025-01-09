@@ -27,13 +27,14 @@ function SXNOTE:PlayTrack( file, type )
         local id = tostring( fadeoutsnd )
 
         hook.Add( "Think", "16thnote_fadeout" .. id, function()
-            if !IsValid( fadeoutsnd ) or fadeoutsnd:GetVolume() <= 0 then
+            if !IsValid( fadeoutsnd ) or fadeoutsnd:GetVolume() <= 0.05 then
+                SXNOTE:Msg( "Removing faded out sound: ", fadeoutsnd )
                 fadeoutsnd:Stop()
                 fadeoutsnd = nil
                 hook.Remove( "Think", "16thnote_fadeout" .. id )
                 return
             end
-            fadeoutsnd:SetVolume( Lerp( 0.02, fadeoutsnd:GetVolume(), -0.5 ) )
+            fadeoutsnd:SetVolume( Lerp( 0.02, fadeoutsnd:GetVolume(), 0 ) )
         end )
     end
 
@@ -162,68 +163,6 @@ function SXNOTE:GetRandomTrack( type )
     return randomtrack and "sound/16thnote/" .. randomaddon .. "/" .. string.lower( type ) .. "/" .. randomtrack or nil
 end
 
--- Retrieves a random track from a random addon module or nombat pack
-function SXNOTE:GetRandomTracks( type )
-    local _, addontracks = file.Find( "sound/16thnote/*", "GAME" )
-
-    -- NOMBAT --
-    local _, nombatpacks = file.Find( "sound/nombat/*", "GAME" )
-    for k, v in ipairs( nombatpacks ) do nombatpacks[ k ] = v .. "_NOMBAT" end
-
-    table.Add( addontracks, nombatpacks )
-    ------------
-
-
-    -- Remove Disabled Packs --
-    local disabled = self:GetDisabled()
-
-    for k, pack in pairs( addontracks ) do
-        if disabled[ pack ] then addontracks[ k ] = nil end
-    end
-    addontracks = table.ClearKeys( addontracks )
-    --------------------------------------
-
-    local randomaddon = addontracks[ math.random( #addontracks ) ] -- Picks a random addon module for 16thnote
-    print( "Random Addon:", randomaddon )
-    if !randomaddon then return end
-
-    -- NOMBAT --
-    -- Only executes if a nombat pack was chosen from the randomaddon variable
-    if string.find( randomaddon, "_NOMBAT" ) then
-        randomaddon = string.Replace( randomaddon, "_NOMBAT", "" )
-
-        local tracks, _ = file.Find( "sound/nombat/" .. randomaddon .. "/*", "GAME" )
-
-        local ambient = {}
-        local combat = {}
-        for _, track in ipairs( tracks ) do
-            if string.StartWith( track, "a" ) then
-                ambient[ #ambient + 1 ] = track 
-            else
-                combat[ #combat + 1 ] = track 
-            end
-        end
-
-        local ambienttrack = ambient[ math.random( #ambient ) ]
-        local combattrack = combat[ math.random( #combat ) ]
-        
-        return ambienttrack and "sound/nombat/" .. randomaddon .. "/" .. ambienttrack or nil, combattrack and "sound/nombat/" .. randomaddon .. "/" .. combattrack or nil
-    end
-    ------------
-
-    local ambienttracks = file.Find( "sound/16thnote/" .. randomaddon .. "/ambient/*", "GAME" )
-    local combattracks = file.Find( "sound/16thnote/" .. randomaddon .. "/combat/*", "GAME" )
-
-    local ambienttrack = ambienttracks[ math.random( #ambienttracks ) ]
-    local combattrack = combattracks[ math.random( #combattracks ) ]
-
-    print( "Ambient:", ambienttrack )
-    print( "Combat:", combattrack )
-
-    return ambienttrack and "sound/16thnote/" .. randomaddon .. "/ambient/" .. ambienttrack or nil, combattrack and "sound/16thnote/" .. randomaddon .. "/combat/" .. combattrack or nil
-end
-
-
 -- Main functions
 hook.Add( "Think", "16thnote_musicthink", function()
 
@@ -234,6 +173,7 @@ hook.Add( "Think", "16thnote_musicthink", function()
         if combattrack then
             SXNOTE:Msg( "Starting new Combat Track", combattrack )
             SXNOTE:PlayTrack( combattrack, "Combat" )
+            SXNOTE.CombatTimeDelay = CurTime() + 3
         else
             SXNOTE:Msg( "Failed to load sound: Combat", combattrack )
             SXNOTE.CombatTimeDelay = CurTime() + 30
@@ -246,6 +186,7 @@ hook.Add( "Think", "16thnote_musicthink", function()
         if ambienttrack then
             SXNOTE:Msg( "Starting new Ambient Track", ambienttrack )
             SXNOTE:PlayTrack( ambienttrack, "Ambient" )
+            SXNOTE.AmbientTimeDelay = CurTime() + 3
         else
             SXNOTE:Msg( "Failed to load sound: Ambient", ambienttrack )
             SXNOTE.AmbientTimeDelay = CurTime() + 30
