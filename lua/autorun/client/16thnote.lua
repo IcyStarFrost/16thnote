@@ -277,32 +277,6 @@ hook.Add( "PopulateToolMenu", "16thnote_spawnmenuoption", function()
         
         panel:AddItem( disabledlist )
 
-        function disabledlist:OnRowSelected( index, line )
-            self:RemoveLine( index )
-            enabledlist:AddLine( line:GetColumnText( 1 ) )
-
-            SXNOTE.CombatTimeDelay = 0
-            SXNOTE.AmbientTimeDelay = 0
-
-            SaveDisabledPacks()
-        end
-
-        local disabledpacks = file.Read( "16thnote/disabledpacks.json", "DATA" )
-        if disabledpacks then
-            disabledpacks = util.JSONToTable( disabledpacks )
-
-            SXNOTE.DisabledPacks = disabledpacks
-
-            for _, line in ipairs( enabledlist:GetLines() ) do
-                if disabledpacks[ line:GetColumnText( 1 ) ] then enabledlist:RemoveLine( line:GetID() ) end
-            end
-
-            for k, _ in pairs( disabledpacks ) do
-                disabledlist:AddLine( k )
-            end
-        end
-
-
         function SaveDisabledPacks()
             local lines = disabledlist:GetLines()
             local data = {}
@@ -315,6 +289,38 @@ hook.Add( "PopulateToolMenu", "16thnote_spawnmenuoption", function()
 
             file.Write( "16thnote/disabledpacks.json", util.TableToJSON( data ) )
         end
+
+        function disabledlist:OnRowSelected( index, line )
+            self:RemoveLine( index )
+            enabledlist:AddLine( line:GetColumnText( 1 ) )
+
+            SXNOTE.CombatTimeDelay = 0
+            SXNOTE.AmbientTimeDelay = 0
+
+            SaveDisabledPacks()
+        end
+
+        local disabledpacks = file.Read( "16thnote/disabledpacks.json", "DATA" )
+        local packs = SXNOTE:GetPacks()
+        if disabledpacks then
+            disabledpacks = util.JSONToTable( disabledpacks )
+
+            SXNOTE.DisabledPacks = disabledpacks
+
+            for _, line in ipairs( enabledlist:GetLines() ) do
+                if disabledpacks[ line:GetColumnText( 1 ) ] then enabledlist:RemoveLine( line:GetID() ) end
+            end
+
+            for _, pack in ipairs( packs ) do
+                if disabledpacks[ pack ] then
+                    disabledlist:AddLine( pack )
+                end
+            end
+
+            SaveDisabledPacks()
+        end
+
+
         -------------------------------------------------------------------
 
         -- Track Skipping --
