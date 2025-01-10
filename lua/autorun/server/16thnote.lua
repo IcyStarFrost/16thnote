@@ -20,9 +20,12 @@ hook.Add( "Tick", "16thnote_combatdetermine", function()
     for _, ply in player.Iterator() do
         local istargetted = SXNOTE:PlyBeingTargetted( ply )
 
+        if istargetted then
+            ply.SXNOTEWaitOff = CurTime() + 4 -- Prevents the combat track from instantly fading out
+        end
+
         if istargetted and !ply.SXNOTEInCombat then
             ply.SXNOTEInCombat = true
-            ply.SXNOTEWaitOff = CurTime() + 4 -- Prevents the combat track from instantly fading out
 
             net.Start( "16thnote_combatstatus" )
             net.WriteBool( true )
