@@ -104,7 +104,10 @@ end
 function SXNOTE:GetDisabled()
     if self.DisabledPacks then return self.DisabledPacks end
     local disabled = file.Read( "16thnote/disabledpacks.json", "DATA" )
-    if !disabled then return end
+    if !disabled then 
+        file.Write( "16thnote/disabledpacks.json", util.TableToJSON( {} ) )
+        return {}
+    end
 
     self.DisabledPacks = util.JSONToTable( disabled )
     return self.DisabledPacks
