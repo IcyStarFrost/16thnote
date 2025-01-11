@@ -155,7 +155,11 @@ function SXNOTE:GetRandomTrack( type )
 
         local usabletracks = {}
         for _, track in ipairs( tracks ) do
-            usabletracks[ #usabletracks + 1 ] = track
+            if type == "Ambient" and string.StartWith( track, "a" ) then
+                usabletracks[ #usabletracks + 1 ] = track
+            elseif type == "Combat" and string.StartWith( track, "c" ) then
+                usabletracks[ #usabletracks + 1 ] = track
+            end
         end
 
         local randomtrack = usabletracks[ math.random( #usabletracks ) ]
