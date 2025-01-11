@@ -250,6 +250,8 @@ hook.Add( "PopulateToolMenu", "16thnote_spawnmenuoption", function()
         panel:CheckBox( "LOS Only", "16thnote_los" )
         panel:ControlHelp( "Whether combat music should only play if the enemy has line of sight to you" ):SetColor( Color( 255, 102, 0 ) )
 
+        panel:CheckBox( "Debug", "16thnote_debug" )
+        panel:ControlHelp( "Enables the console debug messages" ):SetColor( Color( 255, 102, 0 ) )
 
         -- Enable/Disable Code --
         panel:Help( "--- Enable/Disable Music Packs ---" )
