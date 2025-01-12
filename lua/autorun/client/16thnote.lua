@@ -8,7 +8,7 @@ local debugmode = CreateClientConVar( "16thnote_debug", 0, false, false, "Enable
 file.CreateDir( "16thnote" )
 
 -- LOS only option
-CreateClientConVar( "16thnote_los", 0, true, true, "If combat music should only play if the enemy has line of sight to the player", 0, 1 )
+CreateClientConVar( "16thnote_los", 1, true, true, "If combat music should only play if the enemy has line of sight to the player", 0, 1 )
 
 
 -- Debug messages
