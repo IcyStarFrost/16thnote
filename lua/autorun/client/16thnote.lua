@@ -113,6 +113,82 @@ function SXNOTE:GetDisabled()
     return self.DisabledPacks
 end
 
+-- Returns data about enabled/disabled ambient/combat music packs
+function SXNOTE:GetEnabledData()
+    local data = file.Read( "16thnote/enableddata.json", "DATA" )
+    if !data then
+        file.Write( "16thnote/enableddata.json", util.TableToJSON( {} ) )
+        return {}
+    end
+
+    return util.JSONToTable( data )
+end
+
+-- Automatically adds packs that are not in the enabled database and deletes packs that are no longer installed from the database
+function SXNOTE:PopulateEnabledData()
+    local data = self:GetEnabledData()
+    local packs = self:GetPacks()
+
+    for _, pack in ipairs( packs ) do
+        if !data[ pack ] then
+            self:UpdatePackData( pack, true, true )
+        end
+    end
+
+    local inverted = table.Flip( packs )
+    for pack, data in pairs( data ) do
+        if !inverted[ pack ] then
+            self:Msg( "Prompting " .. pack .. "'s deletion due to it not being installed anymore" )
+            self:DeletePackData( pack )
+        end
+    end
+end
+
+-- Returns whether ambient music is enabled for this pack or not
+function SXNOTE:IsAmbientEnabled( pack )
+    local data = self:GetEnabledData()
+    local packdata = data[ pack ]
+
+    if packdata then
+        return packdata.ambientenabled
+    else
+        self:Msg( "WARNING! Attempted to determine if " .. pack .. " was able to play ambient tracks without any enabled data!")
+        return false 
+    end
+end
+
+-- Returns whether combat music is enabled for this pack or not
+function SXNOTE:IsCombatEnabled( pack )
+    local data = self:GetEnabledData()
+    local packdata = data[ pack ]
+
+    if packdata then
+        return packdata.combatenabled
+    else
+        self:Msg( "WARNING! Attempted to determine if " .. pack .. " was able to play combat tracks without any enabled data!")
+        return false 
+    end
+end
+
+-- Deletes a pack's enabled data
+function SXNOTE:DeletePackData( packname )
+    local data = self:GetEnabledData()
+    data[ packname ] = nil
+    self:Msg( "Deleting " .. packname .. "'s enabled data" )
+
+    file.Write( "16thnote/enableddata.json", util.TableToJSON( data, true ) )
+end
+
+-- Updates a given music pack's enabled data
+function SXNOTE:UpdatePackData( packname, ambientenabled, combatenabled )
+    local data = self:GetEnabledData()
+
+    data[ packname ] = { ambientenabled = ambientenabled, combatenabled = combatenabled,}
+
+    self:Msg( "Updating " .. packname .. "'s enabled data" )
+
+    file.Write( "16thnote/enableddata.json", util.TableToJSON( data, true ) )
+end
 
 -- Returns a random track for the given type
 -- Type: Ambient or Combat
@@ -127,17 +203,16 @@ function SXNOTE:GetRandomTrack( type )
     ------------
 
     -- Remove Disabled Packs/Packs that do not contain "type" --
-    local disabled = self:GetDisabled()
-
     for k, pack in pairs( addontracks ) do
-        if disabled[ pack ] then SXNOTE:Msg( pack, " is disabled! Removing from possible tracks" ) addontracks[ k ] = nil end
+        if type == "Ambient" and !self:IsAmbientEnabled( pack ) then self:Msg( pack, " ambient music is disabled! Removing from possible tracks" ) addontracks[ k ] = nil continue end
+        if type == "Combat" and !self:IsCombatEnabled( pack ) then self:Msg( pack, " combat music is disabled! Removing from possible tracks" ) addontracks[ k ] = nil continue end
 
         if type == "Ambient" and !self:HasAmbientTracks( pack ) then
             addontracks[ k ] = nil
-            SXNOTE:Msg( pack, " does not have Ambient files" )
+            self:Msg( pack, " does not have Ambient files" )
         elseif type == "Combat" and !self:HasCombatTracks( pack ) then
             addontracks[ k ] = nil
-            SXNOTE:Msg( pack, " does not have Combat files" )
+            self:Msg( pack, " does not have Combat files" )
         end
     end
     addontracks = table.ClearKeys( addontracks )
@@ -229,7 +304,96 @@ net.Receive( "16thnote_combatstatus", function()
 end )
 
 
+function SXNOTE:OpenEnabledEditor( pack, list )
+    if IsValid( self.enablededitormain ) then self.enablededitormain:Remove() end
 
+    local data = SXNOTE:GetEnabledData()
+
+    self.enablededitormain = vgui.Create( "DPanel", GetHUDPanel() )
+    self.enablededitormain:SetSize( ScrW(), ScrH() )
+    self.enablededitormain:SetDrawOnTop( true )
+    self.enablededitormain:MakePopup()
+
+    local main = vgui.Create( "DPanel", self.enablededitormain )
+    main:SetSize( 400, 200 )
+    main:Center()
+
+    function self.enablededitormain:Paint( w, h )
+        surface.SetDrawColor( 0, 0, 0, 200 )
+        surface.DrawRect( 0, 0, w, h )
+    end
+
+    function main:Paint( w, h )
+        surface.SetDrawColor( 0, 0, 0, 200 )
+        surface.DrawRect( 0, 0, w, h )
+    end
+
+    local cancel = vgui.Create( "DButton", main )
+    cancel:SetSize( 50, 30 )
+    cancel:SetPos( 400 - 50, 200 - 30 )
+    cancel:SetText( "CANCEL" )
+
+    local save = vgui.Create( "DButton", main )
+    save:SetSize( 100, 30 )
+    save:SetPos( 300 - 50, 200 - 30 )
+    save:SetText( "SAVE" )
+
+    function save:Paint( w, h )
+        surface.SetDrawColor( 0, 0, 0, 255 )
+        surface.DrawRect( 0, 0, w, h )
+    end
+
+    function cancel:Paint( w, h )
+        surface.SetDrawColor( 0, 0, 0, 255 )
+        surface.DrawRect( 0, 0, w, h )
+    end
+
+    local title = vgui.Create( "DLabel", main )
+    title:SetText( "16th Note Music Type Enabler")
+    title:Dock( TOP )
+    title:SetFont( "Trebuchet24" )
+
+    local packname = vgui.Create( "DLabel", main )
+    packname:SetText( "Editing " .. pack .. " data.." )
+    packname:Dock( TOP )
+    packname:SetFont( "CreditsText" )
+
+
+    local ambientenabled = vgui.Create( "DCheckBoxLabel", main )
+    ambientenabled:SetPos( 0, 50 )
+    ambientenabled:SetText( "Ambient Music Enabled" )
+
+    local combatenabled = vgui.Create( "DCheckBoxLabel", main )
+    combatenabled:SetPos( 0, 80 )
+    combatenabled:SetText( "Combat Music Enabled" )
+
+    if data[ pack ] then
+        ambientenabled:SetChecked( data[ pack ].ambientenabled )
+        combatenabled:SetChecked( data[ pack ].combatenabled )
+    end
+
+    function save:DoClick()
+        SXNOTE:UpdatePackData( pack, ambientenabled:GetChecked(), combatenabled:GetChecked() )
+
+        SXNOTE.CombatTimeDelay = 0
+        SXNOTE.AmbientTimeDelay = 0
+
+        local data = SXNOTE:GetEnabledData()
+        for _, line in ipairs( list:GetLines() ) do
+            local linepack = line:GetColumnText( 1 )
+
+            if linepack == pack then
+                line:SetColumnText( 2, tostring( data[ pack ].ambientenabled ) )
+                line:SetColumnText( 3, tostring( data[ pack ].combatenabled ) )
+            end
+        end
+
+        surface.PlaySound( "buttons/button14.wav" )
+        SXNOTE.enablededitormain:Remove()
+    end
+    
+    function cancel:DoClick() surface.PlaySound( "buttons/combine_button3.wav" ) SXNOTE.enablededitormain:Remove() end
+end
 
 -- SPAWNMENU STUFF --
 hook.Add( "AddToolMenuCategories", "16thnote_category", function()
@@ -256,79 +420,41 @@ hook.Add( "PopulateToolMenu", "16thnote_spawnmenuoption", function()
         -- Enable/Disable Code --
         panel:Help( "--- Enable/Disable Music Packs ---" )
 
-        local disabledlist
-        local SaveDisabledPacks
-        local enabledlist = vgui.Create( "DListView", panel )
-        enabledlist:SetSize( 0, 200 )
-        enabledlist:AddColumn( "Enabled Music Packs", 1 )
-
-        panel:AddItem( enabledlist )
-
-        local packs = SXNOTE:GetPacks()
-
-        for _, pack in ipairs( packs ) do
-            enabledlist:AddLine( pack )
-        end
-
-        function enabledlist:OnRowSelected( index, line )
-            self:RemoveLine( index )
-            disabledlist:AddLine( line:GetColumnText( 1 ) )
-
-            SXNOTE.CombatTimeDelay = 0
-            SXNOTE.AmbientTimeDelay = 0
-
-            SaveDisabledPacks()
-        end
-
-        disabledlist = vgui.Create( "DListView", panel )
-        disabledlist:SetSize( 0, 200 )
-        disabledlist:AddColumn( "Disabled Music Packs", 1 )
+        panel:Help( "HAT = Has Ambient Tracks\nHCT = Has Combat Tracks\n\nClick on a pack to enable/disable ambient/combat tracks individually" )
+        SXNOTE.EnabledListView = vgui.Create( "DListView", panel )
+        SXNOTE.EnabledListView:SetSize( 0, 200 )
+        SXNOTE.EnabledListView:AddColumn( "Music Pack Name", 1 )
+        SXNOTE.EnabledListView:AddColumn( "Ambient Enabled", 2 )
+        SXNOTE.EnabledListView:AddColumn( "Combat Enabled", 3 )
+        SXNOTE.EnabledListView:AddColumn( "HAT", 4 )
+        SXNOTE.EnabledListView:AddColumn( "HCT", 5 )
         
-        panel:AddItem( disabledlist )
 
-        function SaveDisabledPacks()
-            local lines = disabledlist:GetLines()
-            local data = {}
+        panel:AddItem( SXNOTE.EnabledListView )
 
-            for _, v in pairs( lines ) do
-                data[ v:GetColumnText( 1 ) ] = true
-            end
-
-            SXNOTE.DisabledPacks = data
-
-            file.Write( "16thnote/disabledpacks.json", util.TableToJSON( data ) )
-        end
-
-        function disabledlist:OnRowSelected( index, line )
-            self:RemoveLine( index )
-            enabledlist:AddLine( line:GetColumnText( 1 ) )
-
-            SXNOTE.CombatTimeDelay = 0
-            SXNOTE.AmbientTimeDelay = 0
-
-            SaveDisabledPacks()
-        end
-
-        local disabledpacks = file.Read( "16thnote/disabledpacks.json", "DATA" )
         local packs = SXNOTE:GetPacks()
-        if disabledpacks then
-            disabledpacks = util.JSONToTable( disabledpacks )
+        local data = SXNOTE:GetEnabledData()
+        for _, pack in ipairs( packs ) do
+            local line = SXNOTE.EnabledListView:AddLine( pack )
 
-            SXNOTE.DisabledPacks = disabledpacks
+            line:SetColumnText( 4, tostring( SXNOTE:HasAmbientTracks( pack ) ) )
+            line:SetColumnText( 5, tostring( SXNOTE:HasCombatTracks( pack ) ) )
 
-            for _, line in ipairs( enabledlist:GetLines() ) do
-                if disabledpacks[ line:GetColumnText( 1 ) ] then enabledlist:RemoveLine( line:GetID() ) end
+
+            if data[ pack ] then
+                line:SetColumnText( 2, tostring( data[ pack ].ambientenabled ) )
+                line:SetColumnText( 3, tostring( data[ pack ].combatenabled ) )
+            else
+                line:SetColumnText( 2, "true" )
+                line:SetColumnText( 3, "true" )
+
+                SXNOTE:UpdatePackData( pack, true, true )
             end
-
-            for _, pack in ipairs( packs ) do
-                if disabledpacks[ pack ] then
-                    disabledlist:AddLine( pack )
-                end
-            end
-
-            SaveDisabledPacks()
         end
 
+        function SXNOTE.EnabledListView:OnRowSelected( index, line )
+            SXNOTE:OpenEnabledEditor( line:GetColumnText( 1 ), SXNOTE.EnabledListView )
+        end
 
         -------------------------------------------------------------------
 
@@ -363,3 +489,7 @@ hook.Add( "PopulateToolMenu", "16thnote_spawnmenuoption", function()
 
 	end )
 end )
+
+
+
+SXNOTE:PopulateEnabledData()
