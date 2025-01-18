@@ -281,19 +281,21 @@ hook.Add( "Think", "16thnote_musicthink", function()
     end
     -------------------------------------------------------------------
 
+    local lerprate = math.Clamp( 0.03 / ( ( 1 / FrameTime() ) / 75 ) , 0.02, 0.3 )
+    print(lerprate)
     -- Volume Control --
     if IsValid( SXNOTE.Combat ) and SXNOTE.InCombat then
-        SXNOTE.Combat:SetVolume( Lerp( 0.02, SXNOTE.Combat:GetVolume(), combatvolume:GetFloat() ) )
+        SXNOTE.Combat:SetVolume( Lerp( lerprate, SXNOTE.Combat:GetVolume(), combatvolume:GetFloat() ) )
 
         if IsValid( SXNOTE.Ambient ) then
-            SXNOTE.Ambient:SetVolume( Lerp( 0.02, SXNOTE.Ambient:GetVolume(), 0 ) )
+            SXNOTE.Ambient:SetVolume( Lerp( lerprate, SXNOTE.Ambient:GetVolume(), 0 ) )
         end
     elseif IsValid( SXNOTE.Combat ) and !SXNOTE.InCombat then
-        SXNOTE.Combat:SetVolume( Lerp( 0.02, SXNOTE.Combat:GetVolume(), 0 ) )
+        SXNOTE.Combat:SetVolume( Lerp( lerprate, SXNOTE.Combat:GetVolume(), 0 ) )
     end
     
     if ( !IsValid( SXNOTE.Combat ) or !SXNOTE.InCombat ) and IsValid( SXNOTE.Ambient ) then
-        SXNOTE.Ambient:SetVolume( Lerp( 0.02, SXNOTE.Ambient:GetVolume(), ambientvolume:GetFloat() ) )
+        SXNOTE.Ambient:SetVolume( Lerp( lerprate, SXNOTE.Ambient:GetVolume(), ambientvolume:GetFloat() ) )
     end
     ---------------------
 
