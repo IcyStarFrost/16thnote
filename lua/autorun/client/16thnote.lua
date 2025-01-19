@@ -1,6 +1,7 @@
 SXNOTE = SXNOTE or {}
 SXNOTE.CombatTimeDelay = 0
 SXNOTE.AmbientTimeDelay = 0
+SXNOTE.Warnfailedsound = true
 -- Individual volume controls
 local ambientvolume = CreateClientConVar( "16thnote_ambientvolume", 1, true, false, "The volume of ambient music", 0, 10 )
 local combatvolume = CreateClientConVar( "16thnote_combatvolume", 1, true, false, "The volume of combat music", 0, 10 )
@@ -40,8 +41,17 @@ function SXNOTE:PlayTrack( file, type )
         end )
     end
 
-    sound.PlayFile( file, "noplay", function( snd )
-        if !IsValid( snd ) then return end -- :troll:
+    sound.PlayFile( file, "noplay", function( snd, code, err )
+        if !IsValid( snd ) then 
+            print( "SXNOTE WARNING: " .. file .. " failed to load due to error code " .. code .. " " .. err ) 
+            print( "SXNOTE: Most errors occur due to filenames. Ensure file names are based on letters and numbers only. Make sure there are no double spaces." )
+
+            if SXNOTE.Warnfailedsound then
+                chat.AddText( "A 16th Note music track failed to load! Check console for details. This message will not repeat for the rest of the session." )
+                SXNOTE.Warnfailedsound = false
+            end
+            return 
+        end -- :troll:
 
         local filename = snd:GetFileName()
         local tracksplit = string.Explode( "/", filename )
