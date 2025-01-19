@@ -327,11 +327,12 @@ hook.Add( "Think", "16thnote_musicthink", function()
 
 end )
 
+-- The server informs us whether we are being targetted or not
 net.Receive( "16thnote_combatstatus", function()
     SXNOTE.InCombat = net.ReadBool()
 end )
 
-
+-- Opens an editor that can disable ambient or combat music for a given music pack
 function SXNOTE:OpenEnabledEditor( pack, list )
     if IsValid( self.enablededitormain ) then self.enablededitormain:Remove() end
 
@@ -395,11 +396,13 @@ function SXNOTE:OpenEnabledEditor( pack, list )
     combatenabled:SetPos( 0, 80 )
     combatenabled:SetText( "Combat Music Enabled" )
 
+    -- If data is present for this pack, load it
     if data[ pack ] then
         ambientenabled:SetChecked( data[ pack ].ambientenabled )
         combatenabled:SetChecked( data[ pack ].combatenabled )
     end
 
+    -- Save new configuration for the given pack
     function save:DoClick()
         SXNOTE:UpdatePackData( pack, ambientenabled:GetChecked(), combatenabled:GetChecked() )
 
@@ -423,6 +426,7 @@ function SXNOTE:OpenEnabledEditor( pack, list )
     function cancel:DoClick() surface.PlaySound( "buttons/combine_button3.wav" ) SXNOTE.enablededitormain:Remove() end
 end
 
+-- Opens a panel that allows for manual selection of music
 function SXNOTE:OpenMusicPicker()
     if IsValid( self.MusicPickerPanel ) then self.MusicPickerPanel:Remove() end 
 
@@ -486,6 +490,7 @@ function SXNOTE:OpenMusicPicker()
         listview:AddLine( packname )
     end
 
+    -- Play a track the client selected from either ambientlist or combatlist
     local function SelectTrack( self, packname, trackname )
         if SysTime() < cooldown then return end
         cooldown = SysTime() + 0.1
@@ -530,6 +535,7 @@ function SXNOTE:OpenMusicPicker()
 
         selectedtitle:SetText( "Selected Pack: " .. packname )
 
+        -- Populates the ambient/combat lists for nombat
         if string.EndsWith( packname, "_NOMBAT" ) then
             packname = string.Replace( packname, "_NOMBAT", "" )
     
@@ -545,6 +551,7 @@ function SXNOTE:OpenMusicPicker()
             return false
         end
     
+        -- Populates the ambient/combat lists for base 16th note
         if file.Exists( "sound/16thnote/" .. packname .. "/ambient", "GAME" ) then
             local tracks = file.Find( "sound/16thnote/" .. packname .. "/ambient/*", "GAME" )
 
