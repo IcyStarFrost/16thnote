@@ -6,6 +6,7 @@ SXNOTE.Warnfailedsound = true
 local ambientvolume = CreateClientConVar( "16thnote_ambientvolume", 1, true, false, "The volume of ambient music", 0, 10 )
 local combatvolume = CreateClientConVar( "16thnote_combatvolume", 1, true, false, "The volume of combat music", 0, 10 )
 local debugmode = CreateClientConVar( "16thnote_debug", 0, false, false, "Enables Debug mode", 0, 1 )
+local alwayswarn = CreateClientConVar( "16thnote_alwayswarn", 0, false, false, "If 16th note should always warn you of music that failed to load", 0, 1 )
 file.CreateDir( "16thnote" )
 
 -- LOS only option
@@ -44,11 +45,13 @@ function SXNOTE:PlayTrack( file, type )
     sound.PlayFile( file, "noplay", function( snd, code, err )
         if !IsValid( snd ) then 
             print( "SXNOTE WARNING: " .. file .. " failed to load due to error code " .. code .. " " .. err ) 
-            print( "SXNOTE: Most errors occur due to filenames. Ensure file names are based on letters and numbers only. Make sure there are no double spaces." )
+            print( "SXNOTE: Most errors occur due to filenames. Ensure file names are based on letters and numbers only. Make sure there are no double spaces and make sure there are no \".\" (periods) in the filename other than the file extension." )
 
-            if SXNOTE.Warnfailedsound then
-                chat.AddText( "A 16th Note music track failed to load! Check console for details. This message will not repeat for the rest of the session." )
+            if SXNOTE.Warnfailedsound and !alwayswarn:GetBool() then
+                chat.AddText( "A 16th Note music track failed to load! " .. file .. " Check console for details. This message will not repeat for the rest of the session unless you enable Always Warn." )
                 SXNOTE.Warnfailedsound = false
+            elseif alwayswarn:GetBool() then
+                chat.AddText( "A 16th Note music track failed to load! " .. file .. " Check console for details" )
             end
             return 
         end -- :troll:
@@ -597,6 +600,9 @@ hook.Add( "PopulateToolMenu", "16thnote_spawnmenuoption", function()
 
         panel:CheckBox( "Debug", "16thnote_debug" )
         panel:ControlHelp( "Enables the console debug messages" ):SetColor( Color( 255, 102, 0 ) )
+
+        panel:CheckBox( "Always Warn", "16thnote_alwayswarn" )
+        panel:ControlHelp( "If 16th Note should always warn you if a music track failed to load" ):SetColor( Color( 255, 102, 0 ) )
 
         -- Enable/Disable Code --
         panel:Help( "--- Enable/Disable Music Packs ---" )
