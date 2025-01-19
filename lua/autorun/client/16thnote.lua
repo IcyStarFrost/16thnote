@@ -42,6 +42,23 @@ function SXNOTE:PlayTrack( file, type )
 
     sound.PlayFile( file, "noplay", function( snd )
         if !IsValid( snd ) then return end -- :troll:
+
+        local filename = snd:GetFileName()
+        local tracksplit = string.Explode( "/", filename )
+        local trackname = string.StripExtension( tracksplit[ #tracksplit ] )
+        local packname = tracksplit[ 3 ]
+
+        if type == "Ambient" then SXNOTE.AmbientTrackPhrase = "Ambient Track: \"" .. trackname .. "\" from " .. packname  end
+        if type == "Combat" then SXNOTE.CombatTrackPhrase = "Combat Track: \"" .. trackname .. "\" from " .. packname  end
+
+        if IsValid( SXNOTE.CurrentAmbientTrack ) and type == "Ambient" then
+            SXNOTE.CurrentAmbientTrack:SetText( "Ambient Track: \"" .. trackname .. "\" from " .. packname )
+        end
+
+        if IsValid( SXNOTE.CurrentCombatTrack ) and type == "Combat" then
+            SXNOTE.CurrentCombatTrack:SetText( "Combat Track: \"" .. trackname .. "\" from " .. packname )
+        end
+
         self[ type ] = snd
         snd:SetVolume( 0 )
         snd:Play()
@@ -282,7 +299,6 @@ hook.Add( "Think", "16thnote_musicthink", function()
     -------------------------------------------------------------------
 
     local lerprate = math.Clamp( 0.03 / ( ( 1 / FrameTime() ) / 75 ) , 0.02, 0.3 )
-    print(lerprate)
     -- Volume Control --
     if IsValid( SXNOTE.Combat ) and SXNOTE.InCombat then
         SXNOTE.Combat:SetVolume( Lerp( lerprate, SXNOTE.Combat:GetVolume(), combatvolume:GetFloat() ) )
@@ -406,6 +422,11 @@ hook.Add( "PopulateToolMenu", "16thnote_spawnmenuoption", function()
 	spawnmenu.AddToolMenuOption( "Utilities", "16th Note", "16th_noteoptions", "16th Note", "", "", function( panel )
         panel:ControlHelp( "Clientside Options = Orange Labels" ):SetColor( Color( 255, 102, 0 ) )
         panel:ControlHelp( "There are no Serverside options" ):SetColor( Color( 0, 119, 255 ) )
+
+        panel:Help( "\n\n-- CURRENT TRACKS --\n" )
+        SXNOTE.CurrentAmbientTrack = panel:Help( SXNOTE.AmbientTrackPhrase or "Ambient Track: N/A" )
+        SXNOTE.CurrentCombatTrack = panel:Help( SXNOTE.CombatTrackPhrase or "Combat Track: N/A" )
+        panel:Help( "\n" )
         
         panel:NumSlider( "Ambient Volume", "16thnote_ambientvolume", 0, 10, 2 )
         panel:ControlHelp( "The volume of ambient tracks.\n\n1 is normal volume\n0.5 is half volume\n2 is doubled volume" ):SetColor( Color( 255, 102, 0 ) )
