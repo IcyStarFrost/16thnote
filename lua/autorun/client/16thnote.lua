@@ -21,6 +21,7 @@ end
 -- Type: Ambient or Combat
 -- Plays a particular file under the type of Ambient or Combat
 function SXNOTE:PlayTrack( file, type )
+    print(debug.traceback())
 
     SXNOTE:Msg( "Playing track file ", file, " for ", type )
 
@@ -423,6 +424,147 @@ function SXNOTE:OpenEnabledEditor( pack, list )
     function cancel:DoClick() surface.PlaySound( "buttons/combine_button3.wav" ) SXNOTE.enablededitormain:Remove() end
 end
 
+function SXNOTE:OpenMusicPicker()
+    if IsValid( self.MusicPickerPanel ) then self.MusicPickerPanel:Remove() end 
+
+    self.MusicPickerPanel = vgui.Create( "DPanel", GetHUDPanel() )
+    self.MusicPickerPanel:SetSize( 400, 500 )
+    self.MusicPickerPanel:Center()
+    self.MusicPickerPanel:MakePopup()
+
+    local close = vgui.Create( "DButton", self.MusicPickerPanel )
+    close:Dock( BOTTOM )
+    close:SetText( "Exit" )
+    function close:DoClick() SXNOTE.MusicPickerPanel:Remove() end
+
+    local title = vgui.Create( "DLabel", self.MusicPickerPanel )
+    title:SetText( "16th Note Music Picker" )
+    title:Dock( TOP )
+    title:SetFont( "Trebuchet24" )
+
+    local listview = vgui.Create( "DListView", self.MusicPickerPanel )
+    listview:Dock( FILL )
+    listview:AddColumn( "Pack Name", 1 )
+
+    local holderpanel = vgui.Create( "DPanel", self.MusicPickerPanel )
+    holderpanel:SetSize( 1, 200 )
+    holderpanel:Dock( BOTTOM )
+
+    local hascombat = vgui.Create( "DLabel", self.MusicPickerPanel )
+    hascombat:SetText( "Has Combat Tracks: N/A" )
+    hascombat:Dock( BOTTOM )
+    hascombat:SetFont( "Trebuchet16" )
+    hascombat:SetColor( Color( 255, 79, 79) )
+
+    local hasambient = vgui.Create( "DLabel", self.MusicPickerPanel )
+    hasambient:SetText( "Has Ambient Tracks: N/A" )
+    hasambient:Dock( BOTTOM )
+    hasambient:SetFont( "Trebuchet16" )
+    hasambient:SetColor( Color( 92, 255, 92) )
+
+    local selectedtitle = vgui.Create( "DLabel", self.MusicPickerPanel )
+    selectedtitle:SetText( "Selected Pack: None" )
+    selectedtitle:Dock( BOTTOM )
+    selectedtitle:SetFont( "Trebuchet24" )
+
+    local ambientlist = vgui.Create( "DListView", holderpanel )
+    ambientlist:SetSize( 200, 0 )
+    ambientlist:Dock( LEFT )
+    ambientlist:AddColumn( "Ambient Track Name", 1 )
+    ambientlist.IsAmbient = true
+
+    local combatlist = vgui.Create( "DListView", holderpanel )
+    combatlist:SetSize( 200, 0 )
+    combatlist:Dock( RIGHT )
+    combatlist:AddColumn( "Combat Track Name", 1 )
+    combatlist.IsCombat = true
+
+    local packs = self:GetPacks()
+    local selectedpackname = ""
+    local cooldown = 0
+
+    for _, packname in ipairs( packs ) do
+        listview:AddLine( packname )
+    end
+
+    local function SelectTrack( self, packname, trackname )
+        if SysTime() < cooldown then return end
+        cooldown = SysTime() + 0.1
+
+        -- The automatic track playing sometimes overrules the music picker. This is to prevent that from happening
+        SXNOTE.CombatTimeDelay = CurTime() + 1
+        SXNOTE.AmbientTimeDelay = CurTime() + 1
+
+        if string.EndsWith( packname, "_NOMBAT" ) then
+            local fullname = "sound/nombat/" .. string.Replace( packname, "_NOMBAT", "" ) .. "/" .. trackname
+            
+            chat.AddText( "Playing " .. trackname .. " for " .. ( self.IsAmbient and "Ambient" or self.IsCombat and "Combat" ) )
+            surface.PlaySound( "buttons/button15.wav" )
+            SXNOTE:PlayTrack( fullname, self.IsAmbient and "Ambient" or self.IsCombat and "Combat" )
+            return
+        end
+
+        local full16thnotename = "sound/16thnote/" .. packname .. "/" .. ( self.IsAmbient and "ambient" or self.IsCombat and "combat" ) .. "/" .. trackname
+
+        surface.PlaySound( "buttons/button15.wav" )
+        chat.AddText( "Playing " .. trackname .. " for " .. ( self.IsAmbient and "Ambient" or self.IsCombat and "Combat" ) )
+        SXNOTE:PlayTrack( full16thnotename, self.IsAmbient and "Ambient" or self.IsCombat and "Combat" )
+    end
+
+    function ambientlist:OnRowSelected( id, line )
+        SelectTrack( self, selectedpackname, line:GetColumnText( 1 ) )
+    end
+
+    function combatlist:OnRowSelected( id, line )
+        SelectTrack( self, selectedpackname, line:GetColumnText( 1 ) )
+    end
+
+    function listview:OnRowSelected( id, line )
+        ambientlist:Clear()
+        combatlist:Clear()
+
+        local packname = line:GetColumnText( 1 ) 
+        selectedpackname = packname
+        
+        hasambient:SetText( "Has Ambient Tracks: " .. tostring( SXNOTE:HasAmbientTracks( packname ) ) )
+        hascombat:SetText( "Has Combat Tracks: " .. tostring( SXNOTE:HasCombatTracks( packname ) ) )
+
+        selectedtitle:SetText( "Selected Pack: " .. packname )
+
+        if string.EndsWith( packname, "_NOMBAT" ) then
+            packname = string.Replace( packname, "_NOMBAT", "" )
+    
+            local tracks, _ = file.Find( "sound/nombat/" .. packname .. "/*", "GAME" )
+    
+            for _, track in ipairs( tracks ) do
+                if string.StartWith( track, "a" ) then
+                    ambientlist:AddLine( track )
+                elseif string.StartWith( track, "c" ) then
+                    combatlist:AddLine( track )
+                end
+            end
+            return false
+        end
+    
+        if file.Exists( "sound/16thnote/" .. packname .. "/ambient", "GAME" ) then
+            local tracks = file.Find( "sound/16thnote/" .. packname .. "/ambient/*", "GAME" )
+
+            for k, track in ipairs( tracks ) do
+                ambientlist:AddLine( track )
+            end
+        end
+
+        if file.Exists( "sound/16thnote/" .. packname .. "/combat", "GAME" ) then
+            local tracks = file.Find( "sound/16thnote/" .. packname .. "/combat/*", "GAME" )
+
+            for k, track in ipairs( tracks ) do
+                combatlist:AddLine( track )
+            end
+        end
+    end
+
+end
+
 -- SPAWNMENU STUFF --
 hook.Add( "AddToolMenuCategories", "16thnote_category", function()
 	spawnmenu.AddToolCategory( "Utilities", "16th Note", "16th Note" )
@@ -520,9 +662,16 @@ hook.Add( "PopulateToolMenu", "16thnote_spawnmenuoption", function()
         end
         -----------------------
 
+        local openpicker = vgui.Create( "DButton", panel )
+        panel:AddItem( openpicker )
+        openpicker:SetText( "Open Music Picker" )
+        
+        function openpicker:DoClick()
+            SXNOTE:OpenMusicPicker()
+        end
+
 	end )
 end )
-
 
 
 SXNOTE:PopulateEnabledData()
