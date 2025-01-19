@@ -21,7 +21,6 @@ end
 -- Type: Ambient or Combat
 -- Plays a particular file under the type of Ambient or Combat
 function SXNOTE:PlayTrack( file, type )
-    print(debug.traceback())
 
     SXNOTE:Msg( "Playing track file ", file, " for ", type )
 
