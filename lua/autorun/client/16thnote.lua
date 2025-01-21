@@ -2,16 +2,32 @@ SXNOTE = SXNOTE or {}
 SXNOTE.CombatTimeDelay = 0
 SXNOTE.AmbientTimeDelay = 0
 SXNOTE.Warnfailedsound = true
+SXNOTE.DisplayTimeConstant = 5
 -- Individual volume controls
 local ambientvolume = CreateClientConVar( "16thnote_ambientvolume", 1, true, false, "The volume of ambient music", 0, 10 )
 local combatvolume = CreateClientConVar( "16thnote_combatvolume", 1, true, false, "The volume of combat music", 0, 10 )
 local debugmode = CreateClientConVar( "16thnote_debug", 0, false, false, "Enables Debug mode", 0, 1 )
-local alwayswarn = CreateClientConVar( "16thnote_alwayswarn", 0, false, false, "If 16th note should always warn you of music that failed to load", 0, 1 )
-file.CreateDir( "16thnote" )
+local alwayswarn = CreateClientConVar( "16thnote_alwayswarn", 0, true, false, "If 16th note should always warn you of music that failed to load", 0, 1 )
+local hudx = CreateClientConVar( "16thnote_currenttrackdisplay_x", 0, true, false, "The X position of the current track display as a percentage of your screen", 0, 1 )
+local hudy = CreateClientConVar( "16thnote_currenttrackdisplay_y", 0, true, false, "The Y position of the current track display as a percentage of your screen", 0, 1 )
+local enabletrackdisplay = CreateClientConVar( "16thnote_enabletrackdisplay", 1, true, false, "Enables the current track display", 0, 1 )
+
+cvars.AddChangeCallback( "16thnote_currenttrackdisplay_x", function()
+    SXNOTE.TrackDisplayTime = SysTime() + SXNOTE.DisplayTimeConstant
+end )
+
+cvars.AddChangeCallback( "16thnote_enabletrackdisplay", function()
+    SXNOTE.TrackDisplayTime = SysTime() + SXNOTE.DisplayTimeConstant
+end )
+
+cvars.AddChangeCallback( "16thnote_currenttrackdisplay_y", function()
+    SXNOTE.TrackDisplayTime = SysTime() + SXNOTE.DisplayTimeConstant
+end )
 
 -- LOS only option
 CreateClientConVar( "16thnote_los", 1, true, true, "If combat music should only play if the enemy has line of sight to the player", 0, 1 )
 
+file.CreateDir( "16thnote" )
 
 -- Debug messages
 function SXNOTE:Msg( ... )
@@ -61,15 +77,33 @@ function SXNOTE:PlayTrack( file, type )
         local trackname = string.StripExtension( tracksplit[ #tracksplit ] )
         local packname = tracksplit[ 3 ]
 
-        if type == "Ambient" then SXNOTE.AmbientTrackPhrase = "Ambient Track: \"" .. trackname .. "\" from " .. packname  end
-        if type == "Combat" then SXNOTE.CombatTrackPhrase = "Combat Track: \"" .. trackname .. "\" from " .. packname  end
-
-        if IsValid( SXNOTE.CurrentAmbientTrack ) and type == "Ambient" then
-            SXNOTE.CurrentAmbientTrack:SetText( "Ambient Track: \"" .. trackname .. "\" from " .. packname )
+        
+        if type == "Combat" and SXNOTE.InCombat then
+            SXNOTE.TrackDisplayTime = SysTime() + SXNOTE.DisplayTimeConstant
         end
 
-        if IsValid( SXNOTE.CurrentCombatTrack ) and type == "Combat" then
-            SXNOTE.CurrentCombatTrack:SetText( "Combat Track: \"" .. trackname .. "\" from " .. packname )
+        if type == "Ambient" and !SXNOTE.InCombat then
+            SXNOTE.TrackDisplayTime = SysTime() + SXNOTE.DisplayTimeConstant
+        end
+
+        if type == "Ambient" then 
+            SXNOTE.CurrentAmbientTrack = trackname
+            SXNOTE.CurrentAmbientPack = packname 
+            SXNOTE.AmbientTrackPhrase = "Ambient Track: \"" .. trackname .. "\" from " .. packname  
+        end
+
+        if type == "Combat" then 
+            SXNOTE.CurrentCombatTrack = trackname
+            SXNOTE.CurrentCombatPack = packname 
+            SXNOTE.CombatTrackPhrase = "Combat Track: \"" .. trackname .. "\" from " .. packname  
+        end
+
+        if IsValid( SXNOTE.CurrentAmbientTrackLabel ) and type == "Ambient" then
+            SXNOTE.CurrentAmbientTrackLabel:SetText( "Ambient Track: \"" .. trackname .. "\" from " .. packname )
+        end
+
+        if IsValid( SXNOTE.CurrentCombatTrackLabel ) and type == "Combat" then
+            SXNOTE.CurrentCombatTrackLabel:SetText( "Combat Track: \"" .. trackname .. "\" from " .. packname )
         end
 
         self[ type ] = snd
@@ -333,6 +367,8 @@ end )
 -- The server informs us whether we are being targetted or not
 net.Receive( "16thnote_combatstatus", function()
     SXNOTE.InCombat = net.ReadBool()
+
+    SXNOTE.TrackDisplayTime = SysTime() + SXNOTE.DisplayTimeConstant
 end )
 
 -- Opens an editor that can disable ambient or combat music for a given music pack
@@ -574,6 +610,80 @@ function SXNOTE:OpenMusicPicker()
 
 end
 
+
+----------------------------------- CURRENT TRACK DISPLAY -----------------------------------
+--local scale = ScreenScaleH( 0.44 )
+local note = Material( "16thnote/note.png", "smooth" )
+local statecol = Color( 255, 102, 0 )
+local white = Color( 255, 255, 255 )
+SXNOTE.TrackDisplayTime = SysTime() + 5
+SXNOTE.CurrentAlpha = 255
+hook.Add( "HUDPaint", "16thnote_hud", function()
+    if !enabletrackdisplay:GetBool() then return end
+
+    local state = SXNOTE.InCombat and "Combat" or "Ambient"
+    local trackname = SXNOTE.InCombat and SXNOTE.CurrentCombatTrack or SXNOTE.CurrentAmbientTrack
+    local packname = SXNOTE.InCombat and SXNOTE.CurrentCombatPack or SXNOTE.CurrentAmbientPack
+    surface.SetFont( "GModToolHelp" )
+    local sizex = surface.GetTextSize( state )
+    local phrase = " track from " .. packname .. ": " .. trackname
+
+    local x = ScrW() * hudx:GetFloat()
+    local y = ScrH() * hudy:GetFloat()
+
+    local textx = 0
+    local texty = 0
+    local secondaryx = 0
+
+    local align = TEXT_ALIGN_LEFT
+
+    if x < ScrW() * 0.3 then
+        
+        textx = 30
+        texty = 10
+    elseif x > ScrW() * 0.7 then
+        textx = -60
+        texty = 10
+        align = TEXT_ALIGN_RIGHT
+
+        local z = surface.GetTextSize( phrase )
+        local z2 = surface.GetTextSize( state )
+        secondaryx = -z + z2
+    elseif x > ScrW() * 0.3 and x < ScrW() * 0.7 then
+        textx = 30
+        texty = -20
+        align = TEXT_ALIGN_CENTER
+        sizex = 0
+
+        surface.SetFont( "GModToolHelp" )
+        local z = surface.GetTextSize( phrase )
+        local z2 = surface.GetTextSize( state )
+        secondaryx = -z * 0.5 - z2 * 0.5
+    end
+
+    if x > ScrW() * 0.3 and x < ScrW() * 0.7 and y > ScrH() * 0.5 then
+        texty = texty + 60
+    end
+
+    if SysTime() < SXNOTE.TrackDisplayTime then
+        SXNOTE.CurrentAlpha = Lerp( FrameTime() * 2, SXNOTE.CurrentAlpha, 255 )
+        white.a = SXNOTE.CurrentAlpha
+        statecol.a = SXNOTE.CurrentAlpha
+    else
+        SXNOTE.CurrentAlpha = Lerp( FrameTime() * 2, SXNOTE.CurrentAlpha, 0 )
+        white.a = SXNOTE.CurrentAlpha
+        statecol.a = SXNOTE.CurrentAlpha
+    end
+
+    surface.SetDrawColor( 255, 255, 255, SXNOTE.CurrentAlpha )
+    surface.SetMaterial( note )
+    surface.DrawTexturedRect( x, y, 32, 32 )
+
+    draw.DrawText( phrase, "GModToolHelp", x + textx + sizex, y + texty, white, align )
+    draw.DrawText( state, "GModToolHelp", x + textx + secondaryx, y + texty, statecol, align )
+end )
+-----------------------------------
+
 -- SPAWNMENU STUFF --
 hook.Add( "AddToolMenuCategories", "16thnote_category", function()
 	spawnmenu.AddToolCategory( "Utilities", "16th Note", "16th Note" )
@@ -585,8 +695,8 @@ hook.Add( "PopulateToolMenu", "16thnote_spawnmenuoption", function()
         panel:ControlHelp( "There are no Serverside options" ):SetColor( Color( 0, 119, 255 ) )
 
         panel:Help( "\n\n-- CURRENT TRACKS --\n" )
-        SXNOTE.CurrentAmbientTrack = panel:Help( SXNOTE.AmbientTrackPhrase or "Ambient Track: N/A" )
-        SXNOTE.CurrentCombatTrack = panel:Help( SXNOTE.CombatTrackPhrase or "Combat Track: N/A" )
+        SXNOTE.CurrentAmbientTrackLabel = panel:Help( SXNOTE.AmbientTrackPhrase or "Ambient Track: N/A" )
+        SXNOTE.CurrentCombatTrackLabel = panel:Help( SXNOTE.CombatTrackPhrase or "Combat Track: N/A" )
         panel:Help( "\n" )
         
         panel:NumSlider( "Ambient Volume", "16thnote_ambientvolume", 0, 10, 2 )
@@ -603,6 +713,15 @@ hook.Add( "PopulateToolMenu", "16thnote_spawnmenuoption", function()
 
         panel:CheckBox( "Always Warn", "16thnote_alwayswarn" )
         panel:ControlHelp( "If 16th Note should always warn you if a music track failed to load" ):SetColor( Color( 255, 102, 0 ) )
+
+        panel:CheckBox( "Enable Track Display", "16thnote_enabletrackdisplay" )
+        panel:ControlHelp( "Enables the current track display" ):SetColor( Color( 255, 102, 0 ) )
+        
+        panel:NumSlider( "Track Display X", "16thnote_currenttrackdisplay_x", 0, 1, 3 )
+        panel:ControlHelp( "The X (Left right) position of the current track display as a percentage of your screen" ):SetColor( Color( 255, 102, 0 ) )
+
+        panel:NumSlider( "Track Display Y", "16thnote_currenttrackdisplay_y", 0, 1, 3 )
+        panel:ControlHelp( "The Y (Up Down) position of the current track display as a percentage of your screen" ):SetColor( Color( 255, 102, 0 ) )
 
         -- Enable/Disable Code --
         panel:Help( "--- Enable/Disable Music Packs ---" )
