@@ -3,11 +3,18 @@ SXNOTE.CombatTimeDelay = 0
 SXNOTE.AmbientTimeDelay = 0
 SXNOTE.Warnfailedsound = true
 SXNOTE.DisplayTimeConstant = 5
+SXNOTE.TrackDisplayTime = SysTime() + 5
+SXNOTE.CurrentAlpha = 255
+
+
 -- Individual volume controls
 local ambientvolume = CreateClientConVar( "16thnote_ambientvolume", 1, true, false, "The volume of ambient music", 0, 10 )
 local combatvolume = CreateClientConVar( "16thnote_combatvolume", 1, true, false, "The volume of combat music", 0, 10 )
+
 local debugmode = CreateClientConVar( "16thnote_debug", 0, false, false, "Enables Debug mode", 0, 1 )
 local alwayswarn = CreateClientConVar( "16thnote_alwayswarn", 0, true, false, "If 16th note should always warn you of music that failed to load", 0, 1 )
+
+-- Track Display
 local hudx = CreateClientConVar( "16thnote_currenttrackdisplay_x", 0, true, false, "The X position of the current track display as a percentage of your screen", 0, 1 )
 local hudy = CreateClientConVar( "16thnote_currenttrackdisplay_y", 0, true, false, "The Y position of the current track display as a percentage of your screen", 0, 1 )
 local enabletrackdisplay = CreateClientConVar( "16thnote_enabletrackdisplay", 1, true, false, "Enables the current track display", 0, 1 )
@@ -616,18 +623,19 @@ end
 local note = Material( "16thnote/note.png", "smooth" )
 local statecol = Color( 255, 102, 0 )
 local white = Color( 255, 255, 255 )
-SXNOTE.TrackDisplayTime = SysTime() + 5
-SXNOTE.CurrentAlpha = 255
 hook.Add( "HUDPaint", "16thnote_hud", function()
     if !enabletrackdisplay:GetBool() then return end
 
     local state = SXNOTE.InCombat and "Combat" or "Ambient"
     local trackname = SXNOTE.InCombat and SXNOTE.CurrentCombatTrack or SXNOTE.CurrentAmbientTrack
     local packname = SXNOTE.InCombat and SXNOTE.CurrentCombatPack or SXNOTE.CurrentAmbientPack
+
     surface.SetFont( "GModToolHelp" )
     local sizex = surface.GetTextSize( state )
+
     local phrase = " track from " .. packname .. ": " .. trackname
 
+    -- Origin position of the display
     local x = ScrW() * hudx:GetFloat()
     local y = ScrH() * hudy:GetFloat()
 
@@ -637,11 +645,12 @@ hook.Add( "HUDPaint", "16thnote_hud", function()
 
     local align = TEXT_ALIGN_LEFT
 
-    if x < ScrW() * 0.3 then
+    -- Scripted text/logo positioning
+    if x < ScrW() * 0.3 then -- If Left side
         
         textx = 30
         texty = 10
-    elseif x > ScrW() * 0.7 then
+    elseif x > ScrW() * 0.7 then -- If right side
         textx = -60
         texty = 10
         align = TEXT_ALIGN_RIGHT
@@ -649,7 +658,7 @@ hook.Add( "HUDPaint", "16thnote_hud", function()
         local z = surface.GetTextSize( phrase )
         local z2 = surface.GetTextSize( state )
         secondaryx = -z + z2
-    elseif x > ScrW() * 0.3 and x < ScrW() * 0.7 then
+    elseif x > ScrW() * 0.3 and x < ScrW() * 0.7 then -- If in the center of the screen
         textx = 30
         texty = -20
         align = TEXT_ALIGN_CENTER
@@ -661,10 +670,11 @@ hook.Add( "HUDPaint", "16thnote_hud", function()
         secondaryx = -z * 0.5 - z2 * 0.5
     end
 
-    if x > ScrW() * 0.3 and x < ScrW() * 0.7 and y > ScrH() * 0.5 then
+    if x > ScrW() * 0.3 and x < ScrW() * 0.7 and y > ScrH() * 0.5 then -- If in the center of the screen. Moves the phrase text above or below the logo
         texty = texty + 60
     end
 
+    -- Fade in and out
     if SysTime() < SXNOTE.TrackDisplayTime then
         SXNOTE.CurrentAlpha = Lerp( FrameTime() * 2, SXNOTE.CurrentAlpha, 255 )
         white.a = SXNOTE.CurrentAlpha
@@ -680,7 +690,7 @@ hook.Add( "HUDPaint", "16thnote_hud", function()
     surface.DrawTexturedRect( x, y, 32, 32 )
 
     draw.DrawText( phrase, "GModToolHelp", x + textx + sizex, y + texty, white, align )
-    draw.DrawText( state, "GModToolHelp", x + textx + secondaryx, y + texty, statecol, align )
+    draw.DrawText( state, "GModToolHelp", x + textx + secondaryx, y + texty, statecol, align ) -- Highlighting the state
 end )
 -----------------------------------
 
