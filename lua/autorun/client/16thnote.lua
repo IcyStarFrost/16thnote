@@ -250,15 +250,35 @@ function SXNOTE:DeletePackData( packname )
     file.Write( "16thnote/enableddata.json", util.TableToJSON( data, true ) )
 end
 
+function SXNOTE:GetSoloPack()
+    local data = self:GetEnabledData()
+    for pack, packdata in pairs( data ) do
+        if packdata.solo then return pack end
+    end
+end
+
 -- Updates a given music pack's enabled data
-function SXNOTE:UpdatePackData( packname, ambientenabled, combatenabled )
+function SXNOTE:UpdatePackData( packname, ambientenabled, combatenabled, solo )
     local data = self:GetEnabledData()
 
-    data[ packname ] = { ambientenabled = ambientenabled, combatenabled = combatenabled,}
+    data[ packname ] = { ambientenabled = ambientenabled, combatenabled = combatenabled, solo = solo }
+
+    if solo then
+        self.SoloWarning:SetText( "NOTE! " .. packname .. " is attributed solo! Other music packs will not play unless solo is disabled for the pack!" )
+        for datapackname, packdata in pairs( data ) do
+            if packname != datapackname and packdata.solo then
+                data[ datapackname ].solo = false
+            end 
+        end
+    end
 
     self:Msg( "Updating " .. packname .. "'s enabled data" )
 
     file.Write( "16thnote/enableddata.json", util.TableToJSON( data, true ) )
+
+    if !self:GetSoloPack() and IsValid( self.SoloWarning ) then
+        self.SoloWarning:SetText( "" )
+    end
 end
 
 -- Returns a random track for the given type
@@ -275,8 +295,11 @@ function SXNOTE:GetRandomTrack( type )
 
     -- Remove Disabled Packs/Packs that do not contain "type" --
     for k, pack in pairs( addontracks ) do
+        local solopack = SXNOTE:GetSoloPack()
+
         if type == "Ambient" and !self:IsAmbientEnabled( pack ) then self:Msg( pack, " ambient music is disabled! Removing from possible tracks" ) addontracks[ k ] = nil continue end
         if type == "Combat" and !self:IsCombatEnabled( pack ) then self:Msg( pack, " combat music is disabled! Removing from possible tracks" ) addontracks[ k ] = nil continue end
+        if solopack and pack != solopack then self:Msg( solopack .. " is set as the solo pack! Removing " .. pack .. " from possible tracks due to the presence of a solo pack" ) addontracks[ k ] = nil continue end 
 
         if type == "Ambient" and !self:HasAmbientTracks( pack ) then
             addontracks[ k ] = nil
@@ -442,15 +465,20 @@ function SXNOTE:OpenEnabledEditor( pack, list )
     combatenabled:SetPos( 0, 80 )
     combatenabled:SetText( "Combat Music Enabled" )
 
+    local solo = vgui.Create( "DCheckBoxLabel", main )
+    solo:SetPos( 0, 120 )
+    solo:SetText( "Solo (Other packs won't play unless this is disabled. Only one pack can be set as solo!)" )
+
     -- If data is present for this pack, load it
     if data[ pack ] then
         ambientenabled:SetChecked( data[ pack ].ambientenabled )
         combatenabled:SetChecked( data[ pack ].combatenabled )
+        solo:SetChecked( data[ pack ].solo )
     end
 
     -- Save new configuration for the given pack
     function save:DoClick()
-        SXNOTE:UpdatePackData( pack, ambientenabled:GetChecked(), combatenabled:GetChecked() )
+        SXNOTE:UpdatePackData( pack, ambientenabled:GetChecked(), combatenabled:GetChecked(), solo:GetChecked() )
 
         SXNOTE.CombatTimeDelay = 0
         SXNOTE.AmbientTimeDelay = 0
@@ -462,6 +490,12 @@ function SXNOTE:OpenEnabledEditor( pack, list )
             if linepack == pack then
                 line:SetColumnText( 2, tostring( data[ pack ].ambientenabled ) )
                 line:SetColumnText( 3, tostring( data[ pack ].combatenabled ) )
+            end
+
+            if SXNOTE:GetSoloPack() == linepack then
+                line:SetColumnText( 6, tostring( data[ linepack ].solo or "" ) )
+            else
+                line:SetColumnText( 6, "" )
             end
         end
 
@@ -737,6 +771,15 @@ hook.Add( "PopulateToolMenu", "16thnote_spawnmenuoption", function()
         panel:Help( "--- Enable/Disable Music Packs ---" )
 
         panel:Help( "HAT = Has Ambient Tracks\nHCT = Has Combat Tracks\n\nClick on a pack to enable/disable ambient/combat tracks individually" )
+
+        SXNOTE.SoloWarning = panel:Help( "" )
+        SXNOTE.SoloWarning:SetColor( Color( 255, 251, 0 ) )
+        local solopack = SXNOTE:GetSoloPack()
+
+        if solopack then
+            SXNOTE.SoloWarning:SetText( "NOTE! " .. solopack .. " is attributed solo! Other music packs will not play unless solo is disabled for the pack!" )
+        end
+
         SXNOTE.EnabledListView = vgui.Create( "DListView", panel )
         SXNOTE.EnabledListView:SetSize( 0, 200 )
         SXNOTE.EnabledListView:AddColumn( "Music Pack Name", 1 )
@@ -744,7 +787,7 @@ hook.Add( "PopulateToolMenu", "16thnote_spawnmenuoption", function()
         SXNOTE.EnabledListView:AddColumn( "Combat Enabled", 3 )
         SXNOTE.EnabledListView:AddColumn( "HAT", 4 )
         SXNOTE.EnabledListView:AddColumn( "HCT", 5 )
-        
+        SXNOTE.EnabledListView:AddColumn( "Solo", 6 )
 
         panel:AddItem( SXNOTE.EnabledListView )
 
@@ -755,15 +798,15 @@ hook.Add( "PopulateToolMenu", "16thnote_spawnmenuoption", function()
 
             line:SetColumnText( 4, tostring( SXNOTE:HasAmbientTracks( pack ) ) )
             line:SetColumnText( 5, tostring( SXNOTE:HasCombatTracks( pack ) ) )
-
+            
 
             if data[ pack ] then
                 line:SetColumnText( 2, tostring( data[ pack ].ambientenabled ) )
                 line:SetColumnText( 3, tostring( data[ pack ].combatenabled ) )
+                line:SetColumnText( 6, tostring( data[ pack ].solo or "" ) )
             else
                 line:SetColumnText( 2, "true" )
                 line:SetColumnText( 3, "true" )
-
                 SXNOTE:UpdatePackData( pack, true, true )
             end
         end
