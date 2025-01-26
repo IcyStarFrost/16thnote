@@ -661,8 +661,8 @@ hook.Add( "HUDPaint", "16thnote_hud", function()
     if !enabletrackdisplay:GetBool() then return end
 
     local state = SXNOTE.InCombat and "Combat" or "Ambient"
-    local trackname = SXNOTE.InCombat and SXNOTE.CurrentCombatTrack or SXNOTE.CurrentAmbientTrack
-    local packname = SXNOTE.InCombat and SXNOTE.CurrentCombatPack or SXNOTE.CurrentAmbientPack
+    local trackname = SXNOTE.InCombat and SXNOTE.CurrentCombatTrack or SXNOTE.CurrentAmbientTrack or ""
+    local packname = SXNOTE.InCombat and SXNOTE.CurrentCombatPack or SXNOTE.CurrentAmbientPack or ""
 
     surface.SetFont( "GModToolHelp" )
     local sizex = surface.GetTextSize( state )
