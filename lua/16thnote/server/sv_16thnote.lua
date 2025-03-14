@@ -3,7 +3,7 @@ util.AddNetworkString( "16thnote_combatstatus" )
 
 -- Checks whether the player is in combat or not
 function SXNOTE:InCombat( ply )
-    local enemyrequirement = ply:GetInfoNum( "16thnote_threshold", 1 )
+    local enemyrequirement = ply:GetInfoNum( "16thnote_combatthreshold", 1 )
     local losonly = tobool( ply:GetInfoNum( "16thnote_los", 0 ) )
     local totalenemies = 0
 
