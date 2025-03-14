@@ -11,6 +11,8 @@ SXNOTE.CurrentAlpha = 255
 local ambientvolume = CreateClientConVar( "16thnote_ambientvolume", 1, true, false, "The volume of ambient music", 0, 10 )
 local combatvolume = CreateClientConVar( "16thnote_combatvolume", 1, true, false, "The volume of combat music", 0, 10 )
 
+local playinpairs = CreateClientConVar( "16thnote_playpairs", 0, true, false, "If both the Ambient track and Combat track should always play from the same pack", 0, 1 )
+
 local debugmode = CreateClientConVar( "16thnote_debug", 0, false, false, "Enables Debug mode", 0, 1 )
 local alwayswarn = CreateClientConVar( "16thnote_alwayswarn", 0, true, false, "If 16th note should always warn you of music that failed to load", 0, 1 )
 
@@ -282,38 +284,46 @@ function SXNOTE:UpdatePackData( packname, ambientenabled, combatenabled, solo )
     end
 end
 
--- Returns a random track for the given type
--- Type: Ambient or Combat
-function SXNOTE:GetRandomTrack( type )
-    local _, addontracks = file.Find( "sound/16thnote/*", "GAME" )
+-- Returns a table of packs that can be used
+function SXNOTE:GetFilteredPacks( type )
+    local _, musicpacks = file.Find( "sound/16thnote/*", "GAME" )
 
     -- NOMBAT --
     local _, nombatpacks = file.Find( "sound/nombat/*", "GAME" )
     for k, v in ipairs( nombatpacks ) do nombatpacks[ k ] = v .. "_NOMBAT" end
 
-    table.Add( addontracks, nombatpacks )
+    table.Add( musicpacks, nombatpacks )
     ------------
 
     -- Remove Disabled Packs/Packs that do not contain "type" --
-    for k, pack in pairs( addontracks ) do
+    for k, pack in pairs( musicpacks ) do
         local solopack = SXNOTE:GetSoloPack()
 
-        if type == "Ambient" and !self:IsAmbientEnabled( pack ) then self:Msg( pack, " ambient music is disabled! Removing from possible tracks" ) addontracks[ k ] = nil continue end
-        if type == "Combat" and !self:IsCombatEnabled( pack ) then self:Msg( pack, " combat music is disabled! Removing from possible tracks" ) addontracks[ k ] = nil continue end
-        if solopack and pack != solopack then self:Msg( solopack .. " is set as the solo pack! Removing " .. pack .. " from possible tracks due to the presence of a solo pack" ) addontracks[ k ] = nil continue end 
+        if type == "Ambient" and !self:IsAmbientEnabled( pack ) then self:Msg( pack, " ambient music is disabled! Removing from possible tracks" ) musicpacks[ k ] = nil continue end
+        if type == "Combat" and !self:IsCombatEnabled( pack ) then self:Msg( pack, " combat music is disabled! Removing from possible tracks" ) musicpacks[ k ] = nil continue end
+        if solopack and pack != solopack then self:Msg( solopack .. " is set as the solo pack! Removing " .. pack .. " from possible tracks due to the presence of a solo pack" ) musicpacks[ k ] = nil continue end 
 
         if type == "Ambient" and !self:HasAmbientTracks( pack ) then
-            addontracks[ k ] = nil
+            musicpacks[ k ] = nil
             self:Msg( pack, " does not have Ambient files" )
         elseif type == "Combat" and !self:HasCombatTracks( pack ) then
-            addontracks[ k ] = nil
+            musicpacks[ k ] = nil
             self:Msg( pack, " does not have Combat files" )
         end
     end
-    addontracks = table.ClearKeys( addontracks )
-    --------------------------------------
+    musicpacks = table.ClearKeys( musicpacks )
 
-    local randomaddon = addontracks[ math.random( #addontracks ) ] -- Picks a random addon module for 16thnote
+    return musicpacks
+end
+
+-- Returns a random track for the given type and from the given pack (if given)
+-- Type: Ambient or Combat
+function SXNOTE:GetRandomTrack( type, overridepack )
+    local musicpacks = self:GetFilteredPacks( type )
+
+    local randomaddon = musicpacks[ math.random( #musicpacks ) ] -- Picks a random music pack
+
+    randomaddon = overridepack or randomaddon -- Prioritize overridepack
     if !randomaddon then return end
 
     -- NOMBAT --
@@ -342,7 +352,7 @@ function SXNOTE:GetRandomTrack( type )
 
     local randomtrack = typetracks[ math.random( #typetracks ) ]
 
-    return randomtrack and "sound/16thnote/" .. randomaddon .. "/" .. string.lower( type ) .. "/" .. randomtrack or nil
+    return randomtrack and "sound/16thnote/" .. randomaddon .. "/" .. string.lower( type ) .. "/" .. randomtrack or nil, randomaddon
 end
 
 -- Main functions
@@ -350,7 +360,21 @@ hook.Add( "Think", "16thnote_musicthink", function()
 
     -- Play a new track if the current one stopped or doesn't exist --
     if ( IsValid( SXNOTE.Combat ) and SXNOTE.Combat:GetState() == GMOD_CHANNEL_STOPPED or !IsValid( SXNOTE.Combat ) or ( SXNOTE.Combat:GetTime() / SXNOTE.Combat:GetLength() ) >= 0.95 ) and CurTime() > SXNOTE.CombatTimeDelay then
-        local combattrack = SXNOTE:GetRandomTrack( "Combat" )
+        local combattrack, pack = SXNOTE:GetRandomTrack( "Combat" )
+
+        -- Play in pairs
+        if playinpairs:GetBool() then
+            local ambienttrack = SXNOTE:GetRandomTrack( "Ambient", pack )
+            if ambienttrack then
+                SXNOTE:Msg( "Starting new Ambient Track", ambienttrack )
+                SXNOTE:PlayTrack( ambienttrack, "Ambient" )
+                SXNOTE.AmbientTimeDelay = CurTime() + 3 -- Prevent track spamming which can severely degrade FPS
+            else
+                SXNOTE:Msg( "Failed to load sound: Ambient", ambienttrack )
+                SXNOTE.AmbientTimeDelay = CurTime() + 30
+            end
+        end
+        ----------------------
 
         if combattrack then
             SXNOTE:Msg( "Starting new Combat Track", combattrack )
@@ -363,7 +387,21 @@ hook.Add( "Think", "16thnote_musicthink", function()
     end
 
     if ( IsValid( SXNOTE.Ambient ) and SXNOTE.Ambient:GetState() == GMOD_CHANNEL_STOPPED or !IsValid( SXNOTE.Ambient ) or ( SXNOTE.Ambient:GetTime() / SXNOTE.Ambient:GetLength() ) >= 0.95 ) and CurTime() > SXNOTE.AmbientTimeDelay then
-        local ambienttrack = SXNOTE:GetRandomTrack( "Ambient" )
+        local ambienttrack, pack = SXNOTE:GetRandomTrack( "Ambient" )
+
+        -- Play in pairs
+        if playinpairs:GetBool() then
+            local combattrack = SXNOTE:GetRandomTrack( "Combat", pack )
+            if combattrack then
+                SXNOTE:Msg( "Starting new Combat Track", combattrack )
+                SXNOTE:PlayTrack( combattrack, "Combat" )
+                SXNOTE.CombatTimeDelay = CurTime() + 3 -- Prevent track spamming which can severely degrade FPS
+            else
+                SXNOTE:Msg( "Failed to load sound: Combat", combattrack )
+                SXNOTE.CombatTimeDelay = CurTime() + 30
+            end
+        end
+        ----------------------
 
         if ambienttrack then
             SXNOTE:Msg( "Starting new Ambient Track", ambienttrack )
@@ -753,6 +791,9 @@ hook.Add( "PopulateToolMenu", "16thnote_spawnmenuoption", function()
         panel:CheckBox( "LOS Only", "16thnote_los" )
         panel:ControlHelp( "Whether combat music should only play if the enemy has line of sight to you" ):SetColor( Color( 255, 102, 0 ) )
 
+        panel:CheckBox( "Play in Pairs", "16thnote_playpairs" )
+        panel:ControlHelp( "If both the Ambient track and Combat track should attempt to play from the same pack.\n\nNote: This may not always play the same pack for both types if there are either no combat tracks or no ambient tracks available due to a pack not having either one or either type being disabled.\n\nNote 2: Pairing occurs when either Ambient or Combat ends. This means when one type ends, the other will be forced to fade out into the next pack" ):SetColor( Color( 255, 102, 0 ) )
+
         panel:CheckBox( "Debug", "16thnote_debug" )
         panel:ControlHelp( "Enables the console debug messages" ):SetColor( Color( 255, 102, 0 ) )
 
@@ -764,7 +805,7 @@ hook.Add( "PopulateToolMenu", "16thnote_spawnmenuoption", function()
         
         panel:CheckBox( "Always Render Track Display", "16thnote_permanentdisplay" )
         panel:ControlHelp( "Whether the track display should always be rendered" ):SetColor( Color( 255, 102, 0 ) )
-
+        
         panel:NumSlider( "Track Display X", "16thnote_currenttrackdisplay_x", 0, 1, 3 )
         panel:ControlHelp( "The X (Left right) position of the current track display as a percentage of your screen" ):SetColor( Color( 255, 102, 0 ) )
 
@@ -826,7 +867,21 @@ hook.Add( "PopulateToolMenu", "16thnote_spawnmenuoption", function()
         panel:AddItem( changeambient )
         changeambient:SetText( "Skip Ambient Track" )
         function changeambient:DoClick()
-            local ambienttrack = SXNOTE:GetRandomTrack( "Ambient" )
+            local ambienttrack, pack = SXNOTE:GetRandomTrack( "Ambient" )
+
+            -- Play in pairs
+            if playinpairs:GetBool() then
+                local combattrack = SXNOTE:GetRandomTrack( "Combat", pack )
+                if combattrack then
+                    SXNOTE:Msg( "Starting new Combat Track", combattrack )
+                    SXNOTE:PlayTrack( combattrack, "Combat" )
+                    SXNOTE.CombatTimeDelay = CurTime() + 3 -- Prevent track spamming which can severely degrade FPS
+                else
+                    SXNOTE:Msg( "Failed to load sound: Combat", combattrack )
+                    SXNOTE.CombatTimeDelay = CurTime() + 30
+                end
+            end
+            ----------------------
     
             if ambienttrack then
                 SXNOTE:PlayTrack( ambienttrack, "Ambient" )
@@ -840,7 +895,21 @@ hook.Add( "PopulateToolMenu", "16thnote_spawnmenuoption", function()
         panel:AddItem( changecombat )
         changecombat:SetText( "Skip Combat Track" )
         function changecombat:DoClick()
-            local combattrack = SXNOTE:GetRandomTrack( "Combat" )
+            local combattrack, pack = SXNOTE:GetRandomTrack( "Combat" )
+
+            -- Play in pairs
+            if playinpairs:GetBool() then
+                local ambienttrack = SXNOTE:GetRandomTrack( "Ambient", pack )
+                if ambienttrack then
+                    SXNOTE:Msg( "Starting new Ambient Track", ambienttrack )
+                    SXNOTE:PlayTrack( ambienttrack, "Ambient" )
+                    SXNOTE.AmbientTimeDelay = CurTime() + 3 -- Prevent track spamming which can severely degrade FPS
+                else
+                    SXNOTE:Msg( "Failed to load sound: Ambient", ambienttrack )
+                    SXNOTE.AmbientTimeDelay = CurTime() + 30
+                end
+            end
+            ----------------------
 
             if combattrack then
                 SXNOTE:PlayTrack( combattrack, "Combat" )
