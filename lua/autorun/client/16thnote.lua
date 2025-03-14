@@ -18,6 +18,7 @@ local alwayswarn = CreateClientConVar( "16thnote_alwayswarn", 0, true, false, "I
 local hudx = CreateClientConVar( "16thnote_currenttrackdisplay_x", 0, true, false, "The X position of the current track display as a percentage of your screen", 0, 1 )
 local hudy = CreateClientConVar( "16thnote_currenttrackdisplay_y", 0, true, false, "The Y position of the current track display as a percentage of your screen", 0, 1 )
 local enabletrackdisplay = CreateClientConVar( "16thnote_enabletrackdisplay", 1, true, false, "Enables the current track display", 0, 1 )
+local permanentdisplay = CreateClientConVar( "16thnote_permanentdisplay", 0, true, false, "Whether the track display should be rendered permanently", 0, 1 )
 
 cvars.AddChangeCallback( "16thnote_currenttrackdisplay_x", function()
     SXNOTE.TrackDisplayTime = SysTime() + SXNOTE.DisplayTimeConstant
@@ -709,7 +710,7 @@ hook.Add( "HUDPaint", "16thnote_hud", function()
     end
 
     -- Fade in and out
-    if SysTime() < SXNOTE.TrackDisplayTime then
+    if SysTime() < SXNOTE.TrackDisplayTime or permanentdisplay:GetBool() then
         SXNOTE.CurrentAlpha = Lerp( FrameTime() * 2, SXNOTE.CurrentAlpha, 255 )
         white.a = SXNOTE.CurrentAlpha
         statecol.a = SXNOTE.CurrentAlpha
@@ -761,6 +762,9 @@ hook.Add( "PopulateToolMenu", "16thnote_spawnmenuoption", function()
         panel:CheckBox( "Enable Track Display", "16thnote_enabletrackdisplay" )
         panel:ControlHelp( "Enables the current track display" ):SetColor( Color( 255, 102, 0 ) )
         
+        panel:CheckBox( "Always Render Track Display", "16thnote_permanentdisplay" )
+        panel:ControlHelp( "Whether the track display should always be rendered" ):SetColor( Color( 255, 102, 0 ) )
+
         panel:NumSlider( "Track Display X", "16thnote_currenttrackdisplay_x", 0, 1, 3 )
         panel:ControlHelp( "The X (Left right) position of the current track display as a percentage of your screen" ):SetColor( Color( 255, 102, 0 ) )
 
