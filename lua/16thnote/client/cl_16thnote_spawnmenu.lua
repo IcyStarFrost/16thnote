@@ -100,12 +100,25 @@ hook.Add( "PopulateToolMenu", "16thnote_spawnmenuoption", function()
         local changeambient = vgui.Create( "DButton", panel )
         panel:AddItem( changeambient )
         changeambient:SetText( "Skip Ambient Track" )
-        changeambient.DoClick = SXNOTE.PlayRandomAmbientTrack
+        function changeambient:DoClick()
+            SXNOTE:PlayRandomAmbientTrack()
+        end
 
         local changecombat = vgui.Create( "DButton", panel )
         panel:AddItem( changecombat )
         changecombat:SetText( "Skip Combat Track" )
-        changecombat.DoClick = SXNOTE.PlayRandomCombatTrack
+        function changecombat:DoClick()
+            SXNOTE:PlayRandomCombatTrack()
+        end
+
+
+        -- Music Picker
+        local openpicker = vgui.Create( "DButton", panel )
+        panel:AddItem( openpicker )
+        openpicker:SetText( "Open Music Picker" )
+        function openpicker:DoClick()
+            SXNOTE:OpenMusicPicker()
+        end
 
 	end )
 end )
