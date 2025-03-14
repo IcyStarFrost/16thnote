@@ -866,6 +866,9 @@ hook.Add( "PopulateToolMenu", "16thnote_spawnmenuoption", function()
         local changeambient = vgui.Create( "DButton", panel )
         panel:AddItem( changeambient )
         changeambient:SetText( "Skip Ambient Track" )
+
+
+        -- TODO: Turn this into an actual function for use here and in the main Think hook. This is just stupid. It's late at night so not now.
         function changeambient:DoClick()
             local ambienttrack, pack = SXNOTE:GetRandomTrack( "Ambient" )
 
