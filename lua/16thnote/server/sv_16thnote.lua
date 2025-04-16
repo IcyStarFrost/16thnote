@@ -7,14 +7,34 @@ function SXNOTE:InCombat( ply )
     local losonly = tobool( ply:GetInfoNum( "16thnote_los", 0 ) )
     local totalenemies = 0
 
+    if ply.SXNOTEPlayerAttacked and ply.SXNOTEPlayerAttacked > CurTime() then
+        return true
+    end
+
     for _, ent in ents.Iterator() do
-        if ent.GetEnemy and IsValid( ent:GetEnemy() ) and ent:GetEnemy():IsPlayer() and ent:GetEnemy() == ply and ( losonly and ent:Visible( ent:GetEnemy() ) or !losonly )  then
+        if ent.GetEnemy and IsValid( ent:GetEnemy() ) and ( ent:GetEnemy():IsPlayer() and ent:GetEnemy() == ply ) and ( losonly and ent:Visible( ent:GetEnemy() ) or !losonly )  then
             totalenemies = totalenemies + 1
         end
     end
 
     return totalenemies >= enemyrequirement
 end
+
+
+-- Allows PVP music
+hook.Add( "PostEntityFireBullets", "16thnote_playernearshot", function( ent, data ) 
+    for k, ply in player.Iterator() do
+        if ply:GetInfoNum( "16thnote_pvp", 0 ) == 1 and data.Trace.Normal:Dot( ( ply:WorldSpaceCenter() - ent:WorldSpaceCenter() ):GetNormalized() ) >= 0.97 then
+            ply.SXNOTEPlayerAttacked = CurTime() + 5
+        end
+    end
+end )
+
+hook.Add( "PlayerHurt", "16thnote_playerattack", function( ply, attacker, info )
+    if attacker:IsPlayer() and ply:GetInfoNum( "16thnote_pvp", 0 ) == 1 then
+        ply.SXNOTEPlayerAttacked = CurTime() + 5
+    end
+end )
 
 -- Main function for informing the clients that they are being targetted or not
 local cooldown = 0
