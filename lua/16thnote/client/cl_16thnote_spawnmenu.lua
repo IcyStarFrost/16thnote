@@ -7,7 +7,13 @@ local function PopulateDForm( panel )
     SXNOTE.CurrentAmbientTrackLabel = panel:Help( SXNOTE.AmbientTrackPhrase or "Ambient Track: N/A" )
     SXNOTE.CurrentCombatTrackLabel = panel:Help( SXNOTE.CombatTrackPhrase or "Combat Track: N/A" )
     panel:Help( "\n" )
-    
+
+    local box = panel:ComboBox( "Force Type", "16thnote_forceplaytype" )
+    box:AddChoice( "Ambient", "Ambient" )
+    box:AddChoice( "None", "none", true )
+    box:AddChoice( "Combat", "Combat" )
+    panel:ControlHelp( "Forces a certain type of music to always play regardless of combat state" ):SetColor( Color( 255, 102, 0 ) )
+
     panel:NumSlider( "Ambient Volume", "16thnote_ambientvolume", 0, 10, 2 )
     panel:ControlHelp( "The volume of ambient tracks.\n\n1 is normal volume\n0.5 is half volume\n2 is doubled volume" ):SetColor( Color( 255, 102, 0 ) )
 

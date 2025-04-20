@@ -20,6 +20,7 @@ SXNOTE:CreateConVar( "16thnote_combatthreshold", 1, true, true, "How many enemie
 SXNOTE:CreateConVar( "16thnote_debug", 0, false, false, "Enables Debug mode", 0, 1 )
 SXNOTE:CreateConVar( "16thnote_alwayswarn", 0, true, false, "If 16th note should always warn you of music that failed to load", 0, 1 )
 SXNOTE:CreateConVar( "16thnote_pvp", 1, true, true, "Allows combat music to play if 16th Note believes a player is attacking you", 0, 1 )
+SXNOTE:CreateConVar( "16thnote_forceplaytype", "none", true, false, "Forces a certain type to always play regardless of combat state" )
 
 -- Track Display
 SXNOTE:CreateConVar( "16thnote_currenttrackdisplay_x", 0, true, false, "The X position of the current track display as a percentage of your screen", 0, 1 )

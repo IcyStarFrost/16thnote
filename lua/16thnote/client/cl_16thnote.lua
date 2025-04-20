@@ -5,6 +5,13 @@ SXNOTE.TrackDisplayTime = SysTime() + 5
 SXNOTE.CurrentAlpha = 255
 SXNOTE.CleanupDelay = 0
 
+local forcetype = GetConVar( "16thnote_forceplaytype" )
+
+local function InCombat()
+    if forcetype:GetString() == "Combat" then return true end
+    if forcetype:GetString() == "Ambient" then return false end
+    return SXNOTE.InCombat
+end
 
 -- Main functions
 hook.Add( "Think", "16thnote_musicthink", function()
@@ -22,17 +29,17 @@ hook.Add( "Think", "16thnote_musicthink", function()
 
     local lerprate = math.Clamp( 0.03 / ( ( 1 / FrameTime() ) / 75 ) , 0.02, 0.3 )
     -- Volume Control --
-    if IsValid( SXNOTE.Combat ) and SXNOTE.InCombat then
+    if IsValid( SXNOTE.Combat ) and InCombat() then
         SXNOTE.Combat:SetVolume( Lerp( lerprate, SXNOTE.Combat:GetVolume(), SXNOTE:GetCvar( "16thnote_combatvolume" ):GetFloat() ) )
 
         if IsValid( SXNOTE.Ambient ) then
             SXNOTE.Ambient:SetVolume( Lerp( lerprate, SXNOTE.Ambient:GetVolume(), 0 ) )
         end
-    elseif IsValid( SXNOTE.Combat ) and !SXNOTE.InCombat then
+    elseif IsValid( SXNOTE.Combat ) and !InCombat() then
         SXNOTE.Combat:SetVolume( Lerp( lerprate, SXNOTE.Combat:GetVolume(), 0 ) )
     end
     
-    if ( !IsValid( SXNOTE.Combat ) or !SXNOTE.InCombat ) and IsValid( SXNOTE.Ambient ) then
+    if ( !IsValid( SXNOTE.Combat ) or !InCombat() ) and IsValid( SXNOTE.Ambient ) then
         SXNOTE.Ambient:SetVolume( Lerp( lerprate, SXNOTE.Ambient:GetVolume(), SXNOTE:GetCvar( "16thnote_ambientvolume" ):GetFloat() ) )
     end
     ---------------------
@@ -77,9 +84,9 @@ local white = Color( 255, 255, 255 )
 hook.Add( "HUDPaint", "16thnote_hud", function()
     if !SXNOTE:GetCvar( "16thnote_enabletrackdisplay" ):GetBool() then return end
 
-    local state = SXNOTE.InCombat and "Combat" or "Ambient"
-    local trackname = SXNOTE.InCombat and SXNOTE.CurrentCombatTrack or SXNOTE.CurrentAmbientTrack or ""
-    local packname = SXNOTE.InCombat and SXNOTE.CurrentCombatPack or SXNOTE.CurrentAmbientPack or ""
+    local state = InCombat() and "Combat" or "Ambient"
+    local trackname = InCombat() and SXNOTE.CurrentCombatTrack or SXNOTE.CurrentAmbientTrack or ""
+    local packname = InCombat() and SXNOTE.CurrentCombatPack or SXNOTE.CurrentAmbientPack or ""
 
     surface.SetFont( "CreditsText" )
     local sizex = surface.GetTextSize( state )
