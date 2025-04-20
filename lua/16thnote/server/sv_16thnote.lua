@@ -1,15 +1,14 @@
 SXNOTE = SXNOTE or {}
 util.AddNetworkString( "16thnote_combatstatus" )
 
--- If ent2 is visible to ent1
-local function Visible( ent1, ent2 )
+-- If ply is visible to ent1
+local function Visible( ent1, ply )
     local tr = util.TraceLine( {
         start = ent1:WorldSpaceCenter(),
-        endpos = ent2:WorldSpaceCenter(),
+        endpos = ply:EyePos(),
         mask = MASK_SHOT_HULL,
         collisiongroup = COLLISION_GROUP_WORLD
     } )
-    print(tr.Entity)
     return !tr.Hit
 end
 
