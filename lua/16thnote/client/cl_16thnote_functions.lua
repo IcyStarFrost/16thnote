@@ -8,7 +8,7 @@ end
 
 -- Type: Ambient or Combat
 -- Plays a particular file under the type of Ambient or Combat
-function SXNOTE:PlayTrack( file, type )
+function SXNOTE:PlayTrack( file, type, callback )
 
     SXNOTE:Msg( "Playing track file ", file, " for ", type )
 
@@ -80,6 +80,8 @@ function SXNOTE:PlayTrack( file, type )
         self[ type ] = snd
         snd:SetVolume( 0 )
         snd:Play()
+
+        if callback then callback( snd ) end
     end )
 end
 

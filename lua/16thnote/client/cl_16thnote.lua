@@ -3,10 +3,12 @@ SXNOTE.AmbientTimeDelay = 0
 SXNOTE.DisplayTimeConstant = 5
 SXNOTE.TrackDisplayTime = SysTime() + 5
 SXNOTE.CurrentAlpha = 255
+SXNOTE.CleanupDelay = 0
 
 
 -- Main functions
 hook.Add( "Think", "16thnote_musicthink", function()
+    if CurTime() < SXNOTE.CleanupDelay then return end
 
     -- Play a new track if the current one stopped or doesn't exist --
     if ( IsValid( SXNOTE.Combat ) and SXNOTE.Combat:GetState() == GMOD_CHANNEL_STOPPED or !IsValid( SXNOTE.Combat ) or ( SXNOTE.Combat:GetTime() / SXNOTE.Combat:GetLength() ) >= 0.95 ) and CurTime() > SXNOTE.CombatTimeDelay then
@@ -37,6 +39,28 @@ hook.Add( "Think", "16thnote_musicthink", function()
 
 end )
 
+
+-- Prevent admin cleanup from forcibly changing both music types
+hook.Add( "PreCleanupMap", "16thnote_savemusicstate", function()
+    SXNOTE.CleanupDelay = CurTime() + 1
+    if IsValid( SXNOTE.Combat ) then
+        SXNOTE.CombatPosition = SXNOTE.Combat:GetTime()
+    end
+
+    if IsValid( SXNOTE.Ambient ) then
+        SXNOTE.AmbientPosition = SXNOTE.Ambient:GetTime()
+    end
+end )
+
+hook.Add( "PostCleanupMap", "16thnote_restoremusicstate", function()
+    SXNOTE:PlayTrack( SXNOTE.Ambient:GetFileName(), "Ambient", function( snd )
+        snd:SetTime( SXNOTE.AmbientPosition )
+    end )
+    SXNOTE:PlayTrack( SXNOTE.Combat:GetFileName(), "Combat", function( snd )
+        snd:SetTime( SXNOTE.CombatPosition )
+    end )
+end )
+
 -- The server informs us whether we are being targetted or not
 net.Receive( "16thnote_combatstatus", function()
     SXNOTE.InCombat = net.ReadBool()
@@ -57,7 +81,7 @@ hook.Add( "HUDPaint", "16thnote_hud", function()
     local trackname = SXNOTE.InCombat and SXNOTE.CurrentCombatTrack or SXNOTE.CurrentAmbientTrack or ""
     local packname = SXNOTE.InCombat and SXNOTE.CurrentCombatPack or SXNOTE.CurrentAmbientPack or ""
 
-    surface.SetFont( "GModToolHelp" )
+    surface.SetFont( "CreditsText" )
     local sizex = surface.GetTextSize( state )
 
     local phrase = " track from " .. packname .. ": " .. trackname
@@ -91,7 +115,7 @@ hook.Add( "HUDPaint", "16thnote_hud", function()
         align = TEXT_ALIGN_CENTER
         sizex = 0
 
-        surface.SetFont( "GModToolHelp" )
+        surface.SetFont( "CreditsText" )
         local z = surface.GetTextSize( phrase )
         local z2 = surface.GetTextSize( state )
         secondaryx = -z * 0.5 - z2 * 0.5
@@ -116,8 +140,8 @@ hook.Add( "HUDPaint", "16thnote_hud", function()
     surface.SetMaterial( note )
     surface.DrawTexturedRect( x, y, 32, 32 )
 
-    draw.DrawText( phrase, "GModToolHelp", x + textx + sizex, y + texty, white, align )
-    draw.DrawText( state, "GModToolHelp", x + textx + secondaryx, y + texty, statecol, align ) -- Highlighting the state
+    draw.DrawText( phrase, "CreditsText", x + textx + sizex, y + texty, white, align )
+    draw.DrawText( state, "CreditsText", x + textx + secondaryx, y + texty, statecol, align ) -- Highlighting the state
 end )
 -----------------------------------
 
