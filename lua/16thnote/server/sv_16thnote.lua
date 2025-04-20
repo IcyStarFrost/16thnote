@@ -1,11 +1,35 @@
 SXNOTE = SXNOTE or {}
 util.AddNetworkString( "16thnote_combatstatus" )
 
+-- If ent2 is visible to ent1
+local function Visible( ent1, ent2 )
+    local tr = util.TraceLine( {
+        start = ent1:WorldSpaceCenter(),
+        endpos = ent2:WorldSpaceCenter(),
+        mask = MASK_SHOT_HULL,
+        collisiongroup = COLLISION_GROUP_WORLD
+    } )
+    print(tr.Entity)
+    return !tr.Hit
+end
+
+-- Whether ent poses a threat to the player
 local function IsEntAThreat( ent, ply )
     local losonly = tobool( ply:GetInfoNum( "16thnote_los", 0 ) )
     local presence = tobool( ply:GetInfoNum( "16thnote_enemypresence", 0 ) )
-    if presence and ent.Disposition and ent:Disposition( ply ) == D_HT and ent:GetPos():DistToSqr( ply:GetPos() ) <= 3000 ^ 2 and ( losonly and ent:Visible(ply ) or !losonly ) then return true end
-    if ent.GetEnemy and IsValid( ent:GetEnemy() ) and ( ent:GetEnemy():IsPlayer() and ent:GetEnemy() == ply ) and ( losonly and ent:Visible( ent:GetEnemy() ) or !losonly ) then return true end
+
+
+    if presence and 
+        ent.Disposition and 
+        ent:Disposition( ply ) == D_HT and 
+        ent:GetPos():DistToSqr( ply:GetPos() ) <= 3000 ^ 2 and 
+    ( losonly and Visible( ent, ply ) or !losonly ) then return true end
+    
+    if ent.GetEnemy and 
+        IsValid( ent:GetEnemy() ) and 
+        ( ent:GetEnemy():IsPlayer() and 
+        ent:GetEnemy() == ply ) and 
+    ( losonly and Visible( ent, ent:GetEnemy() ) or !losonly ) then return true end
     return false
 end
 
