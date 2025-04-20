@@ -24,7 +24,7 @@ end
 -- Allows PVP music
 hook.Add( "PostEntityFireBullets", "16thnote_playernearshot", function( ent, data ) 
     for k, ply in player.Iterator() do
-        if ply:GetInfoNum( "16thnote_pvp", 0 ) == 1 and data.Trace.Normal:Dot( ( ply:WorldSpaceCenter() - ent:WorldSpaceCenter() ):GetNormalized() ) >= 0.97 then
+        if ply:Visible( ent ) and ply:GetInfoNum( "16thnote_pvp", 0 ) == 1 and data.Trace.Normal:Dot( ( ply:WorldSpaceCenter() - ent:WorldSpaceCenter() ):GetNormalized() ) >= 0.97 then
             ply.SXNOTEPlayerAttacked = CurTime() + 5
         end
     end
