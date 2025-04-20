@@ -54,6 +54,8 @@ local function AddToggleButtons( panel )
         file.Write( "16thnote/enableddata.json", util.TableToJSON( data, true ) )
         combattoggle_bool = !combattoggle_bool
     end
+
+    panel:ControlHelp( "Toggles ambient/combat music for all music packs (For convienence purposes)" ):SetColor( Color( 255, 102, 0 ) )
 end
 
 local function PopulateDForm( panel )
