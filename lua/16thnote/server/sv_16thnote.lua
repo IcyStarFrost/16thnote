@@ -47,7 +47,7 @@ function SXNOTE:InCombat( ply )
         end
     end
 
-    return healthsum >= requiredhealthpool
+    return healthsum > requiredhealthpool
 end
 
 
