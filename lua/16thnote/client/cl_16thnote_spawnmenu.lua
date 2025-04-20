@@ -1,4 +1,61 @@
 
+-- Add buttons for quickly enabling or disabling all music packs' ambient/combat music
+local function AddToggleButtons()
+    local ambienttoggle_bool = true
+    local toggleambient = vgui.Create( "DButton", panel )
+    panel:AddItem( toggleambient )
+    toggleambient:SetText( "Toggle Ambient" )
+    function toggleambient:DoClick()
+        local data = SXNOTE:GetEnabledData()
+
+        surface.PlaySound( "buttons/button16.wav" )
+
+        for packname, v in pairs( data ) do
+            v.ambientenabled = !ambienttoggle_bool
+
+            for _, line in ipairs( SXNOTE.EnabledListView:GetLines() ) do
+                if line:GetColumnText( 1 ) == packname then
+                    if v.ambientenabled then
+                        line:SetColumnText( 2, "true" )
+                    else
+                        line:SetColumnText( 2, "false" )
+                    end
+                end
+            end
+        end
+
+        file.Write( "16thnote/enableddata.json", util.TableToJSON( data, true ) )
+        ambienttoggle_bool = !ambienttoggle_bool
+    end
+
+    local combattoggle_bool = true
+    local togglecombat = vgui.Create( "DButton", panel )
+    panel:AddItem( togglecombat )
+    togglecombat:SetText( "Toggle Combat" )
+    function togglecombat:DoClick()
+        local data = SXNOTE:GetEnabledData()
+
+        surface.PlaySound( "buttons/button16.wav" )
+
+        for packname, v in pairs( data ) do
+            v.combatenabled = !combattoggle_bool
+
+            for _, line in ipairs( SXNOTE.EnabledListView:GetLines() ) do
+                if line:GetColumnText( 1 ) == packname then
+                    if v.combatenabled then
+                        line:SetColumnText( 3, "true" )
+                    else
+                        line:SetColumnText( 3, "false" )
+                    end
+                end
+            end
+        end
+
+        file.Write( "16thnote/enableddata.json", util.TableToJSON( data, true ) )
+        combattoggle_bool = !combattoggle_bool
+    end
+end
+
 local function PopulateDForm( panel )
     panel:ControlHelp( "Clientside Options = Orange Labels" ):SetColor( Color( 255, 102, 0 ) )
     panel:ControlHelp( "There are no Serverside options" ):SetColor( Color( 0, 119, 255 ) )
@@ -59,6 +116,8 @@ local function PopulateDForm( panel )
     if solopack then
         SXNOTE.SoloWarning:SetText( "NOTE! " .. solopack .. " is attributed solo! Other music packs will not play unless solo is disabled for the pack!" )
     end
+
+    AddToggleButtons()
 
     SXNOTE.EnabledListView = vgui.Create( "DListView", panel )
     SXNOTE.EnabledListView:SetSize( 0, 200 )
