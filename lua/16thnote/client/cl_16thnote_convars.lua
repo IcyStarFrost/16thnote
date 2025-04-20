@@ -16,7 +16,9 @@ SXNOTE:CreateConVar( "16thnote_combatvolume", 1, true, false, "The volume of com
 
 -- Other
 SXNOTE:CreateConVar( "16thnote_playpairs", 0, true, false, "If both the Ambient track and Combat track should always play from the same pack", 0, 1 )
-SXNOTE:CreateConVar( "16thnote_combatthreshold", 1, true, true, "How many enemies are required for Combat tracks to start playing", 1, 10 )
+--SXNOTE:CreateConVar( "16thnote_combatthreshold", 1, true, true, "How many enemies are required for Combat tracks to start playing", 1, 10 )
+SXNOTE:CreateConVar( "16thnote_healthpoolthreshold", 0, true, true, "The cumulative health (The sum of each enemy's health) required for combat tracks to play", 0, 2000 )
+SXNOTE:CreateConVar( "16thnote_enemypresence", 0, true, true, "If enemy presence should trigger combat state rather than requiring them to target you", 0, 1 )
 SXNOTE:CreateConVar( "16thnote_debug", 0, false, false, "Enables Debug mode", 0, 1 )
 SXNOTE:CreateConVar( "16thnote_alwayswarn", 0, true, false, "If 16th note should always warn you of music that failed to load", 0, 1 )
 SXNOTE:CreateConVar( "16thnote_pvp", 1, true, true, "Allows combat music to play if 16th Note believes a player is attacking you", 0, 1 )

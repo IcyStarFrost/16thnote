@@ -1,28 +1,36 @@
 SXNOTE = SXNOTE or {}
 util.AddNetworkString( "16thnote_combatstatus" )
 
+local function IsEntAThreat( ent, ply )
+    local losonly = tobool( ply:GetInfoNum( "16thnote_los", 0 ) )
+    local presence = tobool( ply:GetInfoNum( "16thnote_enemypresence", 0 ) )
+    if presence and ent.Disposition and ent:Disposition( ply ) == D_HT and ent:GetPos():DistToSqr( ply:GetPos() ) <= 3000 ^ 2 and ( losonly and ent:Visible(ply ) or !losonly ) then return true end
+    if ent.GetEnemy and IsValid( ent:GetEnemy() ) and ( ent:GetEnemy():IsPlayer() and ent:GetEnemy() == ply ) and ( losonly and ent:Visible( ent:GetEnemy() ) or !losonly ) then return true end
+    return false
+end
+
 -- Checks whether the player is in combat or not
 function SXNOTE:InCombat( ply )
-    local enemyrequirement = ply:GetInfoNum( "16thnote_combatthreshold", 1 )
-    local losonly = tobool( ply:GetInfoNum( "16thnote_los", 0 ) )
-    local totalenemies = 0
+    local requiredhealthpool = ply:GetInfoNum( "16thnote_healthpoolthreshold", 0 )
+    local healthsum = 0
 
     if ply.SXNOTEPlayerAttacked and ply.SXNOTEPlayerAttacked > CurTime() then
         return true
     end
 
     for _, ent in ents.Iterator() do
-        if ent.GetEnemy and IsValid( ent:GetEnemy() ) and ( ent:GetEnemy():IsPlayer() and ent:GetEnemy() == ply ) and ( losonly and ent:Visible( ent:GetEnemy() ) or !losonly )  then
-            totalenemies = totalenemies + 1
+        if IsEntAThreat( ent, ply ) then
+            healthsum = healthsum + ent:GetMaxHealth()
         end
     end
 
-    return totalenemies >= enemyrequirement
+    return healthsum >= requiredhealthpool
 end
 
 
 -- Allows PVP music
-hook.Add( "PostEntityFireBullets", "16thnote_playernearshot", function( ent, data ) 
+hook.Add( "PostEntityFireBullets", "16thnote_playernearshot", function( ent, data )
+    if !IsValid( data.Attacker ) or !data.Attacker:IsPlayer()  then return end
     for k, ply in player.Iterator() do
         if ply:Visible( ent ) and ply:GetInfoNum( "16thnote_pvp", 0 ) == 1 and data.Trace.Normal:Dot( ( ply:WorldSpaceCenter() - ent:WorldSpaceCenter() ):GetNormalized() ) >= 0.97 then
             ply.SXNOTEPlayerAttacked = CurTime() + 5
@@ -31,7 +39,7 @@ hook.Add( "PostEntityFireBullets", "16thnote_playernearshot", function( ent, dat
 end )
 
 hook.Add( "PlayerHurt", "16thnote_playerattack", function( ply, attacker, info )
-    if attacker:IsPlayer() and ply:GetInfoNum( "16thnote_pvp", 0 ) == 1 then
+    if attacker != ply and attacker:IsPlayer() and ply:GetInfoNum( "16thnote_pvp", 0 ) == 1 then
         ply.SXNOTEPlayerAttacked = CurTime() + 5
     end
 end )

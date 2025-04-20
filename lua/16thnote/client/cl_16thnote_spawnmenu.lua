@@ -79,11 +79,14 @@ local function PopulateDForm( panel )
     panel:NumSlider( "Combat Volume", "16thnote_combatvolume", 0, 10, 2 )
     panel:ControlHelp( "The volume of ambient tracks.\n\n1 is normal volume\n0.5 is half volume\n2 is doubled volume" ):SetColor( Color( 255, 102, 0 ) )
 
-    panel:NumSlider( "Combat Threshold", "16thnote_combatthreshold", 1, 10, 0 )
-    panel:ControlHelp( "The amount of enemies required for Combat tracks to start playing" ):SetColor( Color( 255, 102, 0 ) )
+    panel:NumSlider( "Health Threshold", "16thnote_healthpoolthreshold", 0, 2000, 0 )
+    panel:ControlHelp( "The cumulative health (The sum of each enemy's health) required for combat tracks to play. Set this to 0 to disable this\n\nReference:\nCombine Soldier = 50 HP\nHeadcrab = 10 HP\nAntlion = 30 hp" ):SetColor( Color( 255, 102, 0 ) )
 
     panel:CheckBox( "LOS Only", "16thnote_los" )
     panel:ControlHelp( "Whether combat music should only play if the enemy has line of sight to you" ):SetColor( Color( 255, 102, 0 ) )
+
+    panel:CheckBox( "Enemy Presence", "16thnote_enemypresence" )
+    panel:ControlHelp( "If enemy presence should trigger combat state rather than requiring them to target you to trigger combat" ):SetColor( Color( 255, 102, 0 ) )
 
     panel:CheckBox( "Play in Pairs", "16thnote_playpairs" )
     panel:ControlHelp( "If both the Ambient track and Combat track should attempt to play from the same pack.\n\nNote: This may not always play the same pack for both types if there are either no combat tracks or no ambient tracks available due to a pack not having either one or either type being disabled.\n\nNote 2: Pairing occurs when either Ambient or Combat ends. This means when one type ends, the other will be forced to fade out into the next pack" ):SetColor( Color( 255, 102, 0 ) )
