@@ -1,6 +1,6 @@
 
 -- Add buttons for quickly enabling or disabling all music packs' ambient/combat music
-local function AddToggleButtons()
+local function AddToggleButtons( panel )
     local ambienttoggle_bool = true
     local toggleambient = vgui.Create( "DButton", panel )
     panel:AddItem( toggleambient )
@@ -117,7 +117,7 @@ local function PopulateDForm( panel )
         SXNOTE.SoloWarning:SetText( "NOTE! " .. solopack .. " is attributed solo! Other music packs will not play unless solo is disabled for the pack!" )
     end
 
-    AddToggleButtons()
+    AddToggleButtons( panel )
 
     SXNOTE.EnabledListView = vgui.Create( "DListView", panel )
     SXNOTE.EnabledListView:SetSize( 0, 200 )
