@@ -10,11 +10,15 @@ function SXNOTE:GetCvar( name )
     return self.Cvars[ name ]
 end
 
+-- NOTE TO SELF: ALWAYS TEST THE ANY NEW CONVAR'S DEFAULT VALUES TO ENSURE THERE ARE NO ISSUES!
+
 -- Individual volume controls
 SXNOTE:CreateConVar( "16thnote_ambientvolume", 1, true, false, "The volume of ambient music", 0, 10 )
 SXNOTE:CreateConVar( "16thnote_combatvolume", 1, true, false, "The volume of combat music", 0, 10 )
 
 -- Other
+SXNOTE:CreateConVar( "16thnote_loop", 0, false, false, "If the current tracks should loop", 0, 1 )
+SXNOTE:CreateConVar( "16thnote_allowlyrics", 1, true, false, "If music that support lyrics should display lyrics in the world", 0, 1 )
 SXNOTE:CreateConVar( "16thnote_playpairs", 0, true, false, "If both the Ambient track and Combat track should always play from the same pack", 0, 1 )
 --SXNOTE:CreateConVar( "16thnote_combatthreshold", 1, true, true, "How many enemies are required for Combat tracks to start playing", 1, 10 )
 SXNOTE:CreateConVar( "16thnote_healthpoolthreshold", 0, true, true, "The cumulative health (The sum of each enemy's health) required for combat tracks to play", 0, 2000 )

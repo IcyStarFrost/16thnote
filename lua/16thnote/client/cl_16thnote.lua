@@ -6,8 +6,9 @@ SXNOTE.CurrentAlpha = 255
 SXNOTE.CleanupDelay = 0
 
 local forcetype = GetConVar( "16thnote_forceplaytype" )
+local loop = GetConVar( "16thnote_loop" )
 
-local function InCombat()
+function SXNOTE:IsInCombat()
     if forcetype:GetString() == "Combat" then return true end
     if forcetype:GetString() == "Ambient" then return false end
     return SXNOTE.InCombat
@@ -17,29 +18,37 @@ end
 hook.Add( "Think", "16thnote_musicthink", function()
     if CurTime() < SXNOTE.CleanupDelay then return end
 
+    if loop:GetBool() then
+        if IsValid( SXNOTE.Combat ) then SXNOTE.Combat:EnableLooping( true ) end
+        if IsValid( SXNOTE.Ambient ) then SXNOTE.Ambient:EnableLooping( true ) end
+    else
+        if IsValid( SXNOTE.Combat ) then SXNOTE.Combat:EnableLooping( false ) end
+        if IsValid( SXNOTE.Ambient ) then SXNOTE.Ambient:EnableLooping( false ) end
+    end
+
     -- Play a new track if the current one stopped or doesn't exist --
-    if ( IsValid( SXNOTE.Combat ) and SXNOTE.Combat:GetState() == GMOD_CHANNEL_STOPPED or !IsValid( SXNOTE.Combat ) or ( SXNOTE.Combat:GetTime() / SXNOTE.Combat:GetLength() ) >= 0.95 ) and CurTime() > SXNOTE.CombatTimeDelay then
+    if ( IsValid( SXNOTE.Combat ) and SXNOTE.Combat:GetState() == GMOD_CHANNEL_STOPPED or !IsValid( SXNOTE.Combat ) or !loop:GetBool() and ( SXNOTE.Combat:GetTime() / SXNOTE.Combat:GetLength() ) >= 0.95 ) and CurTime() > SXNOTE.CombatTimeDelay then
         SXNOTE:PlayRandomCombatTrack()
     end
 
-    if ( IsValid( SXNOTE.Ambient ) and SXNOTE.Ambient:GetState() == GMOD_CHANNEL_STOPPED or !IsValid( SXNOTE.Ambient ) or ( SXNOTE.Ambient:GetTime() / SXNOTE.Ambient:GetLength() ) >= 0.95 ) and CurTime() > SXNOTE.AmbientTimeDelay then
+    if ( IsValid( SXNOTE.Ambient ) and SXNOTE.Ambient:GetState() == GMOD_CHANNEL_STOPPED or !IsValid( SXNOTE.Ambient ) or !loop:GetBool() and ( SXNOTE.Ambient:GetTime() / SXNOTE.Ambient:GetLength() ) >= 0.95 ) and CurTime() > SXNOTE.AmbientTimeDelay then
         SXNOTE:PlayRandomAmbientTrack()
     end
     -------------------------------------------------------------------
 
     local lerprate = math.Clamp( 0.03 / ( ( 1 / FrameTime() ) / 75 ) , 0.02, 0.3 )
     -- Volume Control --
-    if IsValid( SXNOTE.Combat ) and InCombat() then
+    if IsValid( SXNOTE.Combat ) and SXNOTE:IsInCombat() then
         SXNOTE.Combat:SetVolume( Lerp( lerprate, SXNOTE.Combat:GetVolume(), SXNOTE:GetCvar( "16thnote_combatvolume" ):GetFloat() ) )
 
         if IsValid( SXNOTE.Ambient ) then
             SXNOTE.Ambient:SetVolume( Lerp( lerprate, SXNOTE.Ambient:GetVolume(), 0 ) )
         end
-    elseif IsValid( SXNOTE.Combat ) and !InCombat() then
+    elseif IsValid( SXNOTE.Combat ) and !SXNOTE:IsInCombat() then
         SXNOTE.Combat:SetVolume( Lerp( lerprate, SXNOTE.Combat:GetVolume(), 0 ) )
     end
     
-    if ( !IsValid( SXNOTE.Combat ) or !InCombat() ) and IsValid( SXNOTE.Ambient ) then
+    if ( !IsValid( SXNOTE.Combat ) or !SXNOTE:IsInCombat() ) and IsValid( SXNOTE.Ambient ) then
         SXNOTE.Ambient:SetVolume( Lerp( lerprate, SXNOTE.Ambient:GetVolume(), SXNOTE:GetCvar( "16thnote_ambientvolume" ):GetFloat() ) )
     end
     ---------------------
@@ -84,9 +93,9 @@ local white = Color( 255, 255, 255 )
 hook.Add( "HUDPaint", "16thnote_hud", function()
     if !SXNOTE:GetCvar( "16thnote_enabletrackdisplay" ):GetBool() then return end
 
-    local state = InCombat() and "Combat" or "Ambient"
-    local trackname = InCombat() and SXNOTE.CurrentCombatTrack or SXNOTE.CurrentAmbientTrack or ""
-    local packname = InCombat() and SXNOTE.CurrentCombatPack or SXNOTE.CurrentAmbientPack or ""
+    local state = SXNOTE:IsInCombat() and "Combat" or "Ambient"
+    local trackname = SXNOTE:IsInCombat() and SXNOTE.CurrentCombatTrack or SXNOTE.CurrentAmbientTrack or ""
+    local packname = SXNOTE:IsInCombat() and SXNOTE.CurrentCombatPack or SXNOTE.CurrentAmbientPack or ""
 
     surface.SetFont( "CreditsText" )
     local sizex = surface.GetTextSize( state )

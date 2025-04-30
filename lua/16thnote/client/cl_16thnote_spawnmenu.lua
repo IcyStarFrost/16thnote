@@ -82,6 +82,12 @@ local function PopulateDForm( panel )
     panel:NumSlider( "Health Threshold", "16thnote_healthpoolthreshold", 0, 2000, 0 )
     panel:ControlHelp( "The cumulative health (The sum of each enemy's health) required for combat tracks to play. Set this to 0 to disable this\n\nReference:\nCombine Soldier = 50 HP\nHeadcrab = 10 HP\nAntlion = 30 hp" ):SetColor( Color( 255, 102, 0 ) )
 
+    panel:CheckBox( "Allow Lyrics", "16thnote_allowlyrics" )
+    panel:ControlHelp( "If music from 16th note addons that support lyrics should display lyrics in the world" ):SetColor( Color( 255, 102, 0 ) )
+
+    panel:CheckBox( "Loop Current Tracks", "16thnote_loop" )
+    panel:ControlHelp( "If the current tracks should loop" ):SetColor( Color( 255, 102, 0 ) )
+
     panel:CheckBox( "LOS Only", "16thnote_los" )
     panel:ControlHelp( "Whether combat music should only play if the enemy has line of sight to you" ):SetColor( Color( 255, 102, 0 ) )
 
@@ -112,7 +118,7 @@ local function PopulateDForm( panel )
     -- Enable/Disable Code --
     panel:Help( "--- Enable/Disable Music Packs ---" )
 
-    panel:Help( "HAT = Has Ambient Tracks\nHCT = Has Combat Tracks\n\nClick on a pack to enable/disable ambient/combat tracks individually" )
+    panel:Help( "HAT = Has Ambient Tracks\nHCT = Has Combat Tracks\nLS = Lyric Support\n\nClick on a pack to enable/disable ambient/combat tracks individually" )
 
     SXNOTE.SoloWarning = panel:Help( "" )
     SXNOTE.SoloWarning:SetColor( Color( 255, 251, 0 ) )
@@ -132,6 +138,8 @@ local function PopulateDForm( panel )
     SXNOTE.EnabledListView:AddColumn( "HAT", 4 )
     SXNOTE.EnabledListView:AddColumn( "HCT", 5 )
     SXNOTE.EnabledListView:AddColumn( "Solo", 6 )
+    SXNOTE.EnabledListView:AddColumn( "LS", 7 )
+
 
     panel:AddItem( SXNOTE.EnabledListView )
 
@@ -139,9 +147,14 @@ local function PopulateDForm( panel )
     local data = SXNOTE:GetEnabledData()
     for _, pack in ipairs( packs ) do
         local line = SXNOTE.EnabledListView:AddLine( pack )
+        local supportslyrics = SXNOTE:PackSupportsLyrics( pack )
 
         line:SetColumnText( 4, tostring( SXNOTE:HasAmbientTracks( pack ) ) )
         line:SetColumnText( 5, tostring( SXNOTE:HasCombatTracks( pack ) ) )
+
+        if supportslyrics then
+            line:SetColumnText( 7, "true" )
+        end
         
 
         if data[ pack ] then

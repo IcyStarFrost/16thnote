@@ -97,6 +97,28 @@ function SXNOTE:GetPacks()
     return addontracks
 end
 
+function SXNOTE:GetAmbientTracks( packname )
+    if file.Exists( "sound/16thnote/" .. packname .. "/ambient", "GAME" ) then
+        local tracks = file.Find( "sound/16thnote/" .. packname .. "/ambient/*", "GAME" )
+        local names = {}
+        for _, v in ipairs( tracks ) do
+            names[ #names + 1 ] = "sound/16thnote/" .. packname .. "/ambient/" .. v
+        end
+        return names
+    end
+end
+
+function SXNOTE:GetCombatTracks( packname )
+    if file.Exists( "sound/16thnote/" .. packname .. "/combat", "GAME" ) then
+        local tracks = file.Find( "sound/16thnote/" .. packname .. "/combat/*", "GAME" )
+        local names = {}
+        for _, v in ipairs( tracks ) do
+            names[ #names + 1 ] = "sound/16thnote/" .. packname .. "/combat/" .. v
+        end
+        return names
+    end
+end
+
 function SXNOTE:HasAmbientTracks( addontrackname )
     if string.EndsWith( addontrackname, "_NOMBAT" ) then
         addontrackname = string.Replace( addontrackname, "_NOMBAT", "" )
@@ -214,6 +236,22 @@ function SXNOTE:DeletePackData( packname )
     self:Msg( "Deleting " .. packname .. "'s enabled data" )
 
     file.Write( "16thnote/enableddata.json", util.TableToJSON( data, true ) )
+end
+
+-- Checks whether the 16thnote pack supports lyrics
+function SXNOTE:PackSupportsLyrics( packname )
+    local tracks = self:GetAmbientTracks( packname )
+    table.Add( tracks, self:GetCombatTracks( packname ) )
+
+    for _, v in ipairs( tracks ) do
+        if self.LyricData[ v ] then return true end
+    end
+    return false
+end
+
+-- Returns the current sound channel being played
+function SXNOTE:GetCurrentChannel()
+    return self:IsInCombat() and SXNOTE.Combat or !self:IsInCombat() and SXNOTE.Ambient
 end
 
 function SXNOTE:GetSoloPack()

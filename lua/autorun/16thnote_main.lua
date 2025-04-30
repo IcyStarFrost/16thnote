@@ -36,6 +36,7 @@ local function IncludeDirectory( directory )
     end
 
     for k, dir in ipairs( dirs ) do
+        if dir == "lyrics" and SERVER then continue end
         IncludeDirectory( directory .. dir )
     end
 
