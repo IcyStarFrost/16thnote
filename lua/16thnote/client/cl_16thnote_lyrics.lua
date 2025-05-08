@@ -233,7 +233,7 @@ hook.Add( "Think", "16thnote_limbus-styled-lyrics", function()
 
     local data = SXNOTE:GetLyricData()
 
-    if !data[ filename ] then return end
+    if !data or !data[ filename ] then return end
 
     local lyrics = data[ filename ]
 
