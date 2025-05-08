@@ -111,6 +111,7 @@ function SXNOTE:GetLyricData()
         for filepath, data in pairs( self.CachedLyricData ) do
             if !self.LyricData[ filepath ] then
                 self.LyricData[ filepath ] = data 
+                self.LyricData[ string.lower( filepath ) ] = data -- Incase this is from an addon since filenames are forced to lowercase
                 self:Msg( "Adding " .. filepath .. " lyrics to data" )
             end 
         end
@@ -233,9 +234,9 @@ hook.Add( "Think", "16thnote_limbus-styled-lyrics", function()
 
     local data = SXNOTE:GetLyricData()
 
-    if !data or !data[ filename ] then return end
+    if !data or !data[ string.lower( filename ) ] then return end
 
-    local lyrics = data[ filename ]
+    local lyrics = data[ string.lower( filename ) ]
 
     local time = math.Round( currentsong:GetTime(), 1 )
 
