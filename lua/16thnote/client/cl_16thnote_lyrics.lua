@@ -111,6 +111,7 @@ function SXNOTE:GetLyricData()
         for filepath, data in pairs( self.CachedLyricData ) do
             if !self.LyricData[ filepath ] then
                 self.LyricData[ filepath ] = data 
+                self:Msg( "Adding " .. filepath .. " lyrics to data" )
             end 
         end
 
@@ -230,9 +231,12 @@ hook.Add( "Think", "16thnote_limbus-styled-lyrics", function()
 
     local filename = currentsong:GetFileName()
 
-    if !SXNOTE.LyricData[ filename ] then return end
+    local data = SXNOTE:GetLyricData()
 
-    local lyrics = SXNOTE.LyricData[ filename ]
+    if !data[ filename ] then return end
+
+    local lyrics = data[ filename ]
+
     local time = math.Round( currentsong:GetTime(), 1 )
 
     for _, keyframes in ipairs( lyrics.keyframes ) do
