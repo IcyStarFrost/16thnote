@@ -8,7 +8,7 @@ if CLIENT then
     file.CreateDir( "16thnote" )
 end
 
-local function IncludeDirectory( directory )
+local function IncludeDirectory( directory, endcallback )
     directory = directory .. "/"
 
     
@@ -36,10 +36,19 @@ local function IncludeDirectory( directory )
     end
 
     for k, dir in ipairs( dirs ) do
-        if dir == "lyrics" and SERVER then continue end
         IncludeDirectory( directory .. dir )
+    end
+
+    if #dirs == 0 and endcallback then
+        endcallback()
     end
 
 end
 
 IncludeDirectory( "16thnote" )
+
+if CLIENT then
+    IncludeDirectory( "16thnote_lyric", function()
+        SXNOTE:CacheLyrics()
+    end )
+end

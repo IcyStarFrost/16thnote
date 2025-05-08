@@ -50,15 +50,63 @@ for id, lyricobject in pairs( SXNOTE.LyricDisplays ) do
 end
 
 
+-- Dumps all currently installed lyrics into a dat file that can be referred to when playing on servers that do not have the lyrics
+-- Essentially allows the lyrics to be played on any server
+function SXNOTE:CacheLyrics()
+    local json = util.TableToJSON( self.LyricData )
+    local compresseddata = util.Compress( json )
 
-function SXNOTE:DisplayLimbusStyleLyric( id, type_speed, lyric ) 
+    file.Write( "16thnote/cachedlyrics.dat", compresseddata )
+    self:Msg( "Cached Lyrics" )
+end
+
+
+-- Cache lyrics on disconnect
+gameevent.Listen( "client_disconnect" )
+hook.Add( "client_disconnect", "16thnote_cachelyrics", function()
+    SXNOTE:CacheLyrics()
+end )
+
+-- In singleplayer, return lyric data
+-- In multiplayer check our lyric cache and attempt to apply it to lyric data.
+function SXNOTE:GetLyricData()
+    if game.SinglePlayer() or self.AppliedLyricCache then return self.LyricData end
+
+    self:Msg( "Fetching Lyric Cache" )
+
+    -- Fetch the lyric cache if possible
+    if !self.CachedLyricData then
+        self.CachedLyricData = file.Read( "16thnote/cachedlyrics.dat", "DATA" )
+        if self.CachedLyricData then
+            self.CachedLyricData = util.Decompress( self.CachedLyricData )
+            self.CachedLyricData = util.JSONToTable( self.CachedLyricData )
+        end
+    end
+
+    -- Apply the cache to lyric data
+    if self.CachedLyricData then
+        for filepath, data in pairs( self.CachedLyricData ) do
+            if !self.LyricData[ filepath ] then
+                self.LyricData[ filepath ] = data 
+            end 
+        end
+
+        self:Msg( "Applied lyric cache to lyric data" )
+        self.AppliedLyricCache = true
+    end
+
+
+end
+
+function SXNOTE:DisplayLimbusStyleLyric( id, type_speed, lyric, textcolor, glowcolor ) 
     if SXNOTE.LyricDisplays[ id ] then
         SXNOTE.LyricDisplays[ id ]:Fade()
     end
 
     local lyricobject = {}
 
-    local color = Color( 255, 224, 141 )
+    local textclr = Color( textcolor.r, textcolor.g, textcolor.b )
+    local glowclr = Color( glowcolor.r, glowcolor.g, glowcolor.b )
 
     lyricobject.IsValid = function( self ) return true end
     lyricobject.Kill = function( self ) self.remove = true end
@@ -71,20 +119,14 @@ function SXNOTE:DisplayLimbusStyleLyric( id, type_speed, lyric )
     local forward = EyeAngles():Forward()
     local right = EyeAngles():Right()
 
-    local totalWidth = 0
-    for i = 1, #lyric do
-        local ch = lyric[i]
-        local ch_width = surface.GetTextSize(ch)
-        totalWidth = totalWidth + ch_width
-    end
-    totalWidth = totalWidth * 0.1
 
-    local pos = EyePos() + forward * math.random( totalWidth, 1000 ) + right * math.random( -200, 200 ) + Vector( 0, 0, math.random( 10, 200 ) )
+    local pos = EyePos() + forward * math.random( 300, 1300 ) + right * math.random( -200, 200 ) + Vector( 0, 0, math.random( 10, 200 ) )
     local ang = EyeAngles()
     ang:RotateAroundAxis(ang:Right(), 90)
     ang:RotateAroundAxis(ang:Up(), -90)
 
     local expiretime = SysTime() + 10
+    local extrashaketime = 0
     local lyric_index = 0
     local shake = {}
     local nexttype = SysTime() + type_speed
@@ -97,6 +139,8 @@ function SXNOTE:DisplayLimbusStyleLyric( id, type_speed, lyric )
         
         if nexttype < SysTime() and lyric_index < #lyric then
             lyric_index = lyric_index + 1
+            extrashaketime = SysTime() + 0.4
+            expiretime = SysTime() + 10
             nexttype = SysTime() + type_speed
         end
 
@@ -105,11 +149,12 @@ function SXNOTE:DisplayLimbusStyleLyric( id, type_speed, lyric )
         end
 
         if lyricobject.fadeout then
-            color.a = math.Clamp( color.a - 2, 0, 255 )
+            textclr.a = math.Clamp( textclr.a - 2, 0, 255 )
+            glowclr.a = textclr.a
 
             fadeoutoffset = fadeoutoffset + ang:Up() * -1
 
-            if color.a <= 0 then
+            if textclr.a <= 0 then
                 lyricobject:Kill()
             end
         end
@@ -131,13 +176,14 @@ function SXNOTE:DisplayLimbusStyleLyric( id, type_speed, lyric )
             local ch = lyric[i]
             local ch_width = surface.GetTextSize(ch)
     
-            local charAng = baseAng + Angle(shake[i].shakep, 0, 0)
+            local typeshake = extrashaketime > SysTime() and math.Rand( -1, 1 ) or 0
+            local charAng = baseAng + Angle(shake[i].shakep + typeshake, 0, 0)
     
             cam.Start3D2D(origin + drawOffset, charAng, scale)
 
                 render.DepthRange( 0, 0 )
-                    draw.DrawText(ch, "16thnote_limbuslyric", 0, 0, color, TEXT_ALIGN_LEFT)
-                    draw.DrawText(ch, "16thnote_limbuslyric_glow", 0, 0, color, TEXT_ALIGN_LEFT)
+                    draw.DrawText(ch, "16thnote_limbuslyric_glow", 0, 0, glowclr, TEXT_ALIGN_LEFT)
+                    draw.DrawText(ch, "16thnote_limbuslyric", 0, 0, textclr, TEXT_ALIGN_LEFT)
                 render.DepthRange( 0, 1 )
             cam.End3D2D()
     
@@ -153,12 +199,11 @@ function SXNOTE:DisplayLimbusStyleLyric( id, type_speed, lyric )
 end
 
 
-local allowlyrics = GetConVar( "16thnote_allowlyrics" )
 hook.Add( "Think", "16thnote_limbus-styled-lyrics", function()
-    if !allowlyrics:GetBool() then return end
+    if !GetConVar( "16thnote_allowlyrics" ):GetBool() then return end
     local currentsong = SXNOTE:GetCurrentChannel()
 
-    if !currentsong then return end
+    if !IsValid( currentsong ) then return end
 
     local filename = currentsong:GetFileName()
 
@@ -169,9 +214,11 @@ hook.Add( "Think", "16thnote_limbus-styled-lyrics", function()
 
     for _, keyframes in ipairs( lyrics.keyframes ) do
         local id, lyric_time, type_speed, lyric = keyframes.id, keyframes.time, keyframes.typespeed, keyframes.lyric
+        local textcolor = keyframes.textcolor or Color( 255, 224, 141 )
+        local glowcolor = keyframes.glowcolor or textcolor
 
         if lyric_time == time and ( !keyframes.cooldown or SysTime() > keyframes.cooldown ) then
-            SXNOTE:DisplayLimbusStyleLyric( id, type_speed, lyric ) 
+            SXNOTE:DisplayLimbusStyleLyric( id, type_speed, lyric, textcolor, glowcolor ) 
             keyframes.cooldown = SysTime() + 1.1
             
         end
