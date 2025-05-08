@@ -85,7 +85,9 @@ end
 -- Cache lyrics on disconnect
 gameevent.Listen( "client_disconnect" )
 hook.Add( "client_disconnect", "16thnote_cachelyrics", function()
-    SXNOTE:CacheLyrics()
+    if game.SinglePlayer() then
+        SXNOTE:CacheLyrics()
+    end
 end )
 
 -- In singleplayer, return lyric data
