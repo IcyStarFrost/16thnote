@@ -13,14 +13,16 @@ SXNOTE.LyricData = SXNOTE.LyricData or {}
     time | Number | The timestamp in the music where the lyric will show
     typespeed | Number | Time in seconds for the next text character to be shown
     lyric | String | The actual lyric text
+    textcolor | Color or nil | The color of the text. Optional
+    glowcolor | Color or nil | The color of the glow behind the text. Optional
 
-    FORMAT:
+    FORMAT. COPY THIS:
 
     SXNOTE.LyricData[ {PATH TO SOUNDFILE} ] = {
         keyframes = {
-            { id = 1, time = 1, typespeed = 0.1, lyric = "" },
-            { id = 1, time = 3, typespeed = 0.1, lyric = "" },
-            so on... 
+            { id = 1, time = 1, typespeed = 0.1, lyric = "", textcolor = Color(), glowcolor = Color() },
+            { id = 1, time = 3, typespeed = 0.1, lyric = "", textcolor = Color(), glowcolor = Color() },
+            -- so on... 
         }
 
     }
@@ -29,13 +31,32 @@ SXNOTE.LyricData = SXNOTE.LyricData or {}
 
     EXAMPLE:
 
-    SXNOTE.LyricData[ "sound/16thnote/limbus company/ambient/Fly My Wings.mp3" ] = {
+    SXNOTE.LyricData[ "sound/16thnote/limbus company/combat/Between Two Worlds.mp3" ] = {
         keyframes = {
-            { id = 1, time = 13, typespeed = 0.1, lyric = "Fly, broken wings" },
-            { id = 1, time = 16, typespeed = 0.1, lyric = "I know you are still with me" },
-            { id = 1, time = 21, typespeed = 0.1, lyric = "All I need is a nudge to get me started" },
-             so on...
-             
+            { id = 1, time = 2.5, typespeed = 0.2, lyric = "Ooh" },
+            { id = 1, time = 6, typespeed = 0.2, lyric = "It is this time of the year" },
+            { id = 1, time = 16, typespeed = 0.2, lyric = "A very so merry night we hold dear" },
+            { id = 1, time = 29.5, typespeed = 0.2, lyric = "So many, so many regrets bring me to tears" },
+            { id = 1, time = 43.5, typespeed = 0.2, lyric = "Not many, not many notice nor care" },
+            { id = 1, time = 57, typespeed = 0.2, lyric = "Ooh" },
+            { id = 1, time = 60, typespeed = 0.2, lyric = "My savior" },
+            { id = 1, time = 60 + 4, typespeed = 0.2, lyric = "Ooh" },
+            { id = 1, time = 60 + 6.5, typespeed = 0.2, lyric = "Why does a common fire hold so much power?" },
+            { id = 1, time = 60 + 21, typespeed = 0.2, lyric = "If only we could be forever naive and pure" },
+            { id = 1, time = 60 + 35, typespeed = 0.2, lyric = "If only we could lead painless futures" },
+            { id = 1, time = 60 + 48.3, typespeed = 0.2, lyric = "If only there could be a forgiving world" },
+
+            -- Realm of darkness
+
+            { id = 1, time = 120 + 16, typespeed = 0.1, lyric = "Maybe that was when" },
+            { id = 1, time = 120 + 22.2, typespeed = 0.1, lyric = "I chose to stay fallen" },
+            { id = 1, time = 120 + 30, typespeed = 0.01, lyric = "Lights", textcolor = Color( 0, 0, 0 ), glowcolor = Color( 255, 0, 0 ) },
+            { id = 1, time = 120 + 33, typespeed = 0.01, lyric = "A star", textcolor = Color( 0, 0, 0 ), glowcolor = Color( 255, 0, 0 ) },
+            { id = 1, time = 120 + 36, typespeed = 0.01, lyric = "A voice", textcolor = Color( 0, 0, 0 ), glowcolor = Color( 255, 0, 0 ) },
+
+            ...
+            ...
+            ...
         }
     }
 
