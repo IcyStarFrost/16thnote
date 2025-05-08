@@ -1,6 +1,14 @@
 SXNOTE = SXNOTE or {}
 util.AddNetworkString( "16thnote_combatstatus" )
 
+
+local harmlessents = {
+    [ "npc_cscanner" ] = true,
+    [ "npc_combine_camera" ] = true,
+    [ "npc_clawscanner" ] = true,
+    [ "npc_stalker" ] = true
+}
+
 -- If ply is visible to ent1
 local function Visible( ent1, ply )
     local tr = util.TraceLine( {
@@ -14,6 +22,8 @@ end
 
 -- Whether ent poses a threat to the player
 local function IsEntAThreat( ent, ply )
+    if harmlessents[ ent:GetClass() ] then return false end
+
     local losonly = tobool( ply:GetInfoNum( "16thnote_los", 0 ) )
     local presence = tobool( ply:GetInfoNum( "16thnote_enemypresence", 0 ) )
 
