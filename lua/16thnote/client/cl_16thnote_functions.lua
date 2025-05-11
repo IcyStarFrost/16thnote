@@ -243,6 +243,8 @@ function SXNOTE:PackSupportsLyrics( packname )
     local tracks = self:GetAmbientTracks( packname )
     table.Add( tracks, self:GetCombatTracks( packname ) )
 
+    if !tracks then return false end
+
     for _, v in ipairs( tracks ) do
         if self.LyricData[ v ] then return true end
     end
