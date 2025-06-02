@@ -158,6 +158,7 @@ function SXNOTE:DisplayLimbusStyleLyric( id, type_speed, lyric, textcolor, glowc
 
     local offsetpitch = Angle( math.random( -30, 30 ), 0, 0 )
     local fadeoutoffset = Vector()
+    local lyricoffset = Vector( 0, 0, math.Rand( -10, 10 ) )
 
     hook.Add( "PreDrawEffects", lyricobject, function()
         if lyricobject.remove then hook.Remove( "PreDrawEffects", lyricobject ) return end
@@ -176,8 +177,9 @@ function SXNOTE:DisplayLimbusStyleLyric( id, type_speed, lyric, textcolor, glowc
         if lyricobject.fadeout then
             textclr.a = math.Clamp( textclr.a - 2, 0, 255 )
             glowclr.a = textclr.a
+            extrashaketime = SysTime() + 0.2
 
-            fadeoutoffset = fadeoutoffset + ang:Up() * -1
+            fadeoutoffset = fadeoutoffset + ang:Up() * -1 + Vector( 0, 0, 0.5 )
 
             if textclr.a <= 0 then
                 lyricobject:Kill()
@@ -187,7 +189,7 @@ function SXNOTE:DisplayLimbusStyleLyric( id, type_speed, lyric, textcolor, glowc
         surface.SetFont( "16thnote_limbuslyric" )
 
         local origin = pos
-        local baseAng = ang + offsetpitch
+        local baseAng = ang
         local drawOffset = Vector(0, 0, 0) + fadeoutoffset
     
         for i = 1, lyric_index do
@@ -204,7 +206,7 @@ function SXNOTE:DisplayLimbusStyleLyric( id, type_speed, lyric, textcolor, glowc
             local typeshake = extrashaketime > SysTime() and math.Rand( -1, 1 ) or 0
             local charAng = baseAng + Angle(shake[i].shakep + typeshake, 0, 0)
     
-            cam.Start3D2D(origin + drawOffset, charAng, scale)
+            cam.Start3D2D(origin + drawOffset + lyricoffset * i, charAng, scale)
 
                 render.DepthRange( 0, 0 )
                     draw.DrawText(ch, "16thnote_limbuslyric_glow", 0, 0, glowclr, TEXT_ALIGN_LEFT)
@@ -238,14 +240,15 @@ hook.Add( "Think", "16thnote_limbus-styled-lyrics", function()
 
     local lyrics = data[ string.lower( filename ) ] or data[ filename ]
 
-    local time = math.Round( currentsong:GetTime(), 1 )
+    local time = math.Round( currentsong:GetTime(), 4 )
 
     for _, keyframes in ipairs( lyrics.keyframes ) do
         local id, lyric_time, type_speed, lyric = keyframes.id, keyframes.time, keyframes.typespeed, keyframes.lyric
         local textcolor = keyframes.textcolor or Color( 255, 224, 141 )
         local glowcolor = keyframes.glowcolor or textcolor
 
-        if lyric_time == time and ( !keyframes.cooldown or SysTime() > keyframes.cooldown ) then
+        -- Since sometimes lyrics can be skipped over by using this method, use the new NearlyEqual function to account for possible skips
+        if math.IsNearlyEqual( lyric_time, time, 1e-1 ) and ( !keyframes.cooldown or SysTime() > keyframes.cooldown ) then
             SXNOTE:DisplayLimbusStyleLyric( id, type_speed, lyric, textcolor, glowcolor ) 
             keyframes.cooldown = SysTime() + 1.1
             
