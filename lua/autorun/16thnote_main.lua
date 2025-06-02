@@ -49,6 +49,8 @@ IncludeDirectory( "16thnote" )
 
 if CLIENT then
     IncludeDirectory( "16thnote_lyric", function()
+        SXNOTE:ClearLyricCooldowns()
+
         if game.SinglePlayer() then
             SXNOTE:CacheLyrics()
         end

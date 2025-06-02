@@ -74,6 +74,7 @@ end
 -- Dumps all currently installed lyrics into a dat file that can be referred to when playing on servers that do not have the lyrics
 -- Essentially allows the lyrics to be played on any server
 function SXNOTE:CacheLyrics()
+    self:ClearLyricCooldowns()
     local json = util.TableToJSON( self.LyricData )
     local compresseddata = util.Compress( json )
 
@@ -81,6 +82,16 @@ function SXNOTE:CacheLyrics()
     self:Msg( "Cached Lyrics" )
 end
 
+-- I did not consider that the addon would save keyframe SysTime cooldowns. This function will solve the problems that come with that (i.e lyrics not playing in multiplayer).
+function SXNOTE:ClearLyricCooldowns()
+    local data = self:GetLyricData()
+
+    for filepath, lyricdata in pairs( data ) do
+        for _, keyframes in ipairs( lyricdata.keyframes ) do
+            keyframes.cooldown = 0
+        end
+    end
+end
 
 -- Cache lyrics on disconnect
 gameevent.Listen( "client_disconnect" )
