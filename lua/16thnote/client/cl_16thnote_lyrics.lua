@@ -152,12 +152,12 @@ function SXNOTE:DisplayLimbusStyleLyric( id, type_speed, lyric, textcolor, glowc
     surface.SetFont("16thnote_limbuslyric")
 
     local scale = 0.4
-    local forward = EyeAngles():Forward()
-    local right = EyeAngles():Right()
+    local forward = LocalPlayer():EyeAngles():Forward()
+    local right = LocalPlayer():EyeAngles():Right()
 
 
-    local pos = EyePos() + forward * math.random( 300, 1300 ) + right * math.random( -200, 200 ) + Vector( 0, 0, math.random( 10, 200 ) )
-    local ang = EyeAngles()
+    local pos = LocalPlayer():EyePos() + forward * math.random( 300, 1300 ) + right * math.random( -200, 200 ) + Vector( 0, 0, math.random( 10, 200 ) )
+    local ang = LocalPlayer():EyeAngles()
     ang:RotateAroundAxis(ang:Right(), 90)
     ang:RotateAroundAxis(ang:Up(), -90)
 
