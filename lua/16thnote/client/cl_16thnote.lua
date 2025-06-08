@@ -78,7 +78,9 @@ hook.Add( "PostCleanupMap", "16thnote_restoremusicstate", function()
 end )
 
 hook.Add( "InitPostEntity", "16thnote_load", function()
-    SXNOTE:CacheLyrics()
+    if game.SinglePlayer() then
+        SXNOTE:CacheLyrics()
+    end
     SXNOTE:ClearLyricCooldowns()
     SXNOTE:LowerCaseLyricPaths()
     hook.Remove( "InitPostEntity", "16thnote_load" )

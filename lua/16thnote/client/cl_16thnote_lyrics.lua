@@ -149,6 +149,8 @@ function SXNOTE:GetLyricData()
 
         self:Msg( "Applied lyric cache to lyric data" )
         self.AppliedLyricCache = true
+
+        return self.LyricData
     end
 
 

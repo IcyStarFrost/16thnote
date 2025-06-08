@@ -18,19 +18,19 @@ local function IncludeDirectory( directory, endcallback )
     for k, luafile in ipairs( lua ) do 
         if string.StartWith( luafile, "sv_") and SERVER then
             include( directory .. luafile )
-            --print("Included server ", directory .. luafile )
+            print("16th Note Included server ", directory .. luafile )
         elseif string.StartWith( luafile, "sh_" ) then
             if SERVER then
                 AddCSLuaFile( directory .. luafile )
             end
             include( directory .. luafile )
-            --print("Included shared ", directory .. luafile )
+            print("16th Note Included shared ", directory .. luafile )
         elseif string.StartWith( luafile, "cl_" ) then
             if SERVER then
                 AddCSLuaFile( directory .. luafile )
             elseif CLIENT then
                 include( directory .. luafile )
-                --print("Included client ", directory .. luafile )
+                print("16th Note Included client ", directory .. luafile )
             end
         end
     end
