@@ -48,14 +48,5 @@ end
 IncludeDirectory( "16thnote" )
 
 if CLIENT then
-    SXNOTE.LyricData = SXNOTE.LyricData or {}
-    IncludeDirectory( "16thnote_lyric", function()
-        if game.SinglePlayer() then
-            
-            SXNOTE:CacheLyrics()
-
-        end
-        SXNOTE:ClearLyricCooldowns()
-        SXNOTE:LowerCaseLyricPaths()
-    end )
+    IncludeDirectory( "16thnote_lyric" )
 end

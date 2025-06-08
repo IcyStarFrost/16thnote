@@ -77,6 +77,13 @@ hook.Add( "PostCleanupMap", "16thnote_restoremusicstate", function()
     end )
 end )
 
+hook.Add( "InitPostEntity", "16thnote_load", function()
+    SXNOTE:CacheLyrics()
+    SXNOTE:ClearLyricCooldowns()
+    SXNOTE:LowerCaseLyricPaths()
+    hook.Remove( "InitPostEntity", "16thnote_load" )
+end )
+
 -- The server informs us whether we are being targetted or not
 net.Receive( "16thnote_combatstatus", function()
     SXNOTE.InCombat = net.ReadBool()

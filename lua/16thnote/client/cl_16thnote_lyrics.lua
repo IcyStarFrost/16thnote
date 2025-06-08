@@ -1,5 +1,16 @@
 SXNOTE.LyricData = SXNOTE.LyricData or {}
 
+
+-- This function is needed to automatically lower case the filepath to ensure the lyrics work.
+-- The ONLY reason I decided to do this is because of the fact the workshop automatically lowercases filepaths
+-- and that caused so many problems with so many people of the lyrics not showing up because of that.
+-- This is to make my life 1000^22 easier by just lowercasing the filepaths from the get go.
+
+
+function SXNOTE:RegisterLyrics( filepath, data )
+    self.LyricData[ string.lower( filepath ) ] = data  
+end
+
 --[[ 
     Inspired by Limbus Company
 
@@ -18,20 +29,20 @@ SXNOTE.LyricData = SXNOTE.LyricData or {}
 
     FORMAT. COPY THIS:
 
-    SXNOTE.LyricData[ {PATH TO SOUNDFILE} ] = {
+    SXNOTE:RegisterLyrics( {PATH TO SOUNDFILE}, {
         keyframes = {
             { id = 1, time = 1, typespeed = 0.1, lyric = "", textcolor = Color(), glowcolor = Color() },
             { id = 1, time = 3, typespeed = 0.1, lyric = "", textcolor = Color(), glowcolor = Color() },
             -- so on... 
         }
 
-    }
+    } )
 
 
 
     EXAMPLE:
 
-    SXNOTE.LyricData[ "sound/16thnote/limbus company/combat/Between Two Worlds.mp3" ] = {
+    SXNOTE:RegisterLyrics( "sound/16thnote/limbus company/combat/Between Two Worlds.mp3", {
         keyframes = {
             { id = 1, time = 2.5, typespeed = 0.2, lyric = "Ooh" },
             { id = 1, time = 6, typespeed = 0.2, lyric = "It is this time of the year" },
@@ -58,7 +69,7 @@ SXNOTE.LyricData = SXNOTE.LyricData or {}
             ...
             ...
         }
-    }
+    } )
 
     Lyrics will automatically play when the song plays
 
@@ -256,9 +267,9 @@ hook.Add( "Think", "16thnote_limbus-styled-lyrics", function()
 
     local data = SXNOTE:GetLyricData()
 
-    if !data or ( !data[ string.lower( filename ) ] and !data[ filename  ] ) then return end
+    if !data or !data[ string.lower( filename ) ] then return end
 
-    local lyrics = data[ string.lower( filename ) ] or data[ filename ]
+    local lyrics = data[ string.lower( filename ) ]
 
     local time = math.Round( currentsong:GetTime(), 4 )
 
