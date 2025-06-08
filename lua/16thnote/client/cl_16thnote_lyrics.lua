@@ -82,6 +82,16 @@ function SXNOTE:CacheLyrics()
     self:Msg( "Cached Lyrics" )
 end
 
+function SXNOTE:LowerCaseLyricPaths()
+    local data = self:GetLyricData()
+
+    for path, lyricdata in pairs( data ) do
+        data[ string.lower( path ) ]  = lyricdata
+    end
+
+    self.LyricData = data
+end
+
 -- I did not consider that the addon would save keyframe SysTime cooldowns. This function will solve the problems that come with that (i.e lyrics not playing in multiplayer).
 function SXNOTE:ClearLyricCooldowns()
     local data = self:GetLyricData()
@@ -122,7 +132,6 @@ function SXNOTE:GetLyricData()
         for filepath, data in pairs( self.CachedLyricData ) do
             if !self.LyricData[ filepath ] then
                 self.LyricData[ filepath ] = data 
-                self.LyricData[ string.lower( filepath ) ] = data -- Incase this is from an addon since filenames are forced to lowercase
                 self:Msg( "Adding " .. filepath .. " lyrics to data" )
             end 
         end

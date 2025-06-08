@@ -53,6 +53,7 @@ if CLIENT then
         if game.SinglePlayer() then
             SXNOTE:ClearLyricCooldowns()
             SXNOTE:CacheLyrics()
+            SXNOTE:LowerCaseLyricPaths()
         end
     end )
 end
