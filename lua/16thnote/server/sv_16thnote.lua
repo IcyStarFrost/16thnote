@@ -2,6 +2,8 @@ SXNOTE = SXNOTE or {}
 util.AddNetworkString( "16thnote_combatstatus" )
 
 
+SXNOTE.NPCS = SXNOTE.NPCS or {}
+
 local harmlessents = {
     [ "npc_cscanner" ] = true,
     [ "npc_combine_camera" ] = true,
@@ -27,20 +29,34 @@ local function IsEntAThreat( ent, ply )
     local losonly = tobool( ply:GetInfoNum( "16thnote_los", 0 ) )
     local presence = tobool( ply:GetInfoNum( "16thnote_enemypresence", 0 ) )
 
+    if ent:GetClass() == "terminator_nextbot_wraith" and ent:GetSolidMask() == MASK_NPCSOLID_BRUSHONLY then
+        return false
+    end
+
 
     if presence and 
         ent.Disposition and 
         ent:Disposition( ply ) == D_HT and 
-        ent:GetPos():DistToSqr( ply:GetPos() ) <= 3000 ^ 2 and 
+        ent:GetPos():DistToSqr( ply:GetPos() ) <= ply:GetInfoNum( "16thnote_maxrange", 3000 ) ^ 2 and 
     ( losonly and Visible( ent, ply ) or !losonly ) then return true end
     
     if ent.GetEnemy and 
         IsValid( ent:GetEnemy() ) and 
         ( ent:GetEnemy():IsPlayer() and 
-        ent:GetEnemy() == ply ) and 
+        ent:GetEnemy() == ply ) and
+        ent:GetPos():DistToSqr( ply:GetPos() ) <= ply:GetInfoNum( "16thnote_maxrange", 3000 ) ^ 2 and 
     ( losonly and Visible( ent, ent:GetEnemy() ) or !losonly ) then return true end
     return false
 end
+
+-- Try new caching method to optimize performance
+hook.Add("OnEntityCreated", "16thnote_tracknpcs", function( ent )
+    timer.Simple( 0, function()
+        if ent:IsNPC() or ent:IsNextBot() then
+            SXNOTE.NPCS[ #SXNOTE.NPCS + 1 ] = ent
+        end
+    end )
+end )
 
 -- Checks whether the player is in combat or not
 function SXNOTE:InCombat( ply )
@@ -51,7 +67,9 @@ function SXNOTE:InCombat( ply )
         return true
     end
 
-    for _, ent in ents.Iterator() do
+    for _, ent in ipairs( SXNOTE.NPCS ) do
+        if !IsValid( ent ) then table.remove( SXNOTE.NPCS, _ ) continue end
+
         if IsEntAThreat( ent, ply ) then
             healthsum = healthsum + ent:GetMaxHealth()
         end
