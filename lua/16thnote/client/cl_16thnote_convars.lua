@@ -20,6 +20,7 @@ SXNOTE:CreateConVar( "16thnote_combatvolume", 1, true, false, "The volume of com
 SXNOTE:CreateConVar( "16thnote_loop", 0, false, false, "If the current tracks should loop", 0, 1 )
 SXNOTE:CreateConVar( "16thnote_allowlyrics", 1, true, false, "If music that support lyrics should display lyrics in the world", 0, 1 )
 SXNOTE:CreateConVar( "16thnote_playpairs", 0, true, false, "If both the Ambient track and Combat track should always play from the same pack", 0, 1 )
+SXNOTE:CreateConVar( "16thnote_maxrange", 3000, true, true, "The maximum distance enemies need to be within for combat music to be triggered", 200, 1000000 )
 --SXNOTE:CreateConVar( "16thnote_combatthreshold", 1, true, true, "How many enemies are required for Combat tracks to start playing", 1, 10 )
 SXNOTE:CreateConVar( "16thnote_healthpoolthreshold", 0, true, true, "The cumulative health (The sum of each enemy's health) required for combat tracks to play", 0, 2000 )
 SXNOTE:CreateConVar( "16thnote_enemypresence", 0, true, true, "If enemy presence should trigger combat state rather than requiring them to target you", 0, 1 )

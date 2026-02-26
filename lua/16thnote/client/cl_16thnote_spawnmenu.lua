@@ -82,6 +82,11 @@ local function PopulateDForm( panel )
     panel:NumSlider( "Health Threshold", "16thnote_healthpoolthreshold", 0, 2000, 0 )
     panel:ControlHelp( "The cumulative health (The sum of each enemy's health) required for combat tracks to play. Set this to 0 to disable this\n\nReference:\nCombine Soldier = 50 HP\nHeadcrab = 10 HP\nAntlion = 30 hp" ):SetColor( Color( 255, 102, 0 ) )
 
+    panel:NumSlider( "Combat Range", "16thnote_maxrange", 200, 100000, 0 )
+    panel:ControlHelp( "The maximum distance enemies need to be within for combat music to be triggered" ):SetColor( Color( 255, 102, 0 ) )
+
+    
+
     panel:CheckBox( "Allow Lyrics", "16thnote_allowlyrics" )
     panel:ControlHelp( "If music from 16th note addons that support lyrics should display lyrics in the world" ):SetColor( Color( 255, 102, 0 ) )
 
